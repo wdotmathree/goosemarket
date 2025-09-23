@@ -6,4 +6,6 @@ get the latest lab.
 
 Lab-1: Setting up Git, Python, Pip, Gcc, and doing basic git commands.
 
-Lab-2: Some basic python, and python with single-table MySQL. Basic logging.
+Lab-2: Some basic python and pytest; start of To-Do application.
+
+Lab-3: Define requirements for To-Do application; add MySQL backend to application
