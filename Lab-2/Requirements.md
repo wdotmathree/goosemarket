@@ -31,10 +31,11 @@ application:
 	today(): returns an array of tasks due today
 	tomorrow(): returns an array of tasks due tomorrow
 
-Create approrpiate test cases for these six functions.  You should create
-additional issues for these functions, with possibly branches for those, but do
-so as branches of the branch where this application is being developed, not of
-main.  As you complete those functions, merge the branches back to you
-application branch, and then issue a Merge Request for the application.
+Create approrpiate test cases for these six functions.  You should create issues
+for each these functions (six in total), with branches for those issues, but do
+so as branches of the branch where this To-Do application is being developed,
+not as branches off of main.  As you complete those functions, merge the
+branches back to you application branch, and then issue a Merge Request for the
+To-Do application.
 
 	
