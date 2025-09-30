@@ -10,12 +10,12 @@ Install git and python on your machine.  How you do this will likely be machine
 dependent.  For Windows machines, you should probably set up WSL (Windows
 Subsystem for Linux) via the command:
 
-	  wsl --install
+	wsl --install
 
 This will allow you to run an ubuntu terminal where you can do the standard
 Linux things.  In particular, you will want to do:
 
-      sudo apt update && sudo apt upgrade -y	
+	sudo apt update && sudo apt upgrade -y
 
 though this may be best left for later as it may take some time to run.  To
 install python and pip, execute the commands:
@@ -60,7 +60,7 @@ To set the upstream, you need to do the following:
    suitable description.
 3. clone the project that has been created for you:
 
-   	 `git clone https://git.uwaterloo.ca/se101-fall2025/students/<userid>.git`
+   `git clone https://git.uwaterloo.ca/se101-fall2025/students/<userid>.git`
 
    where `<userid>` is your git/uw userid.
 4. Connect your repository to the SE 101 labs upstream:
@@ -68,15 +68,17 @@ To set the upstream, you need to do the following:
    	  `git remote add upstream https://git.uwaterloo.ca/se101-fall2025/labs.git`
 5. Fetch the remote repository:
 
-   	 `git fetch upstream`
+   `git fetch upstream`
 	 
 6. Whenever you need to get an up-to-date version of the labs repo, do an upstream
-   merge:	    
+   merge:
 
-          git merge upstream/main
+   `git merge upstream/main`
 	  
 7. Update your remote GitLab repository with the new content by pushing all of
-   your code changes for this: 	
+   your code changes for this:
 
-   	  git push origin main
+   `git push origin main`
 
+After fetching the upstream you should be able to see a file Requirements.md and
+other files that will tell you what else is required for this lab.
