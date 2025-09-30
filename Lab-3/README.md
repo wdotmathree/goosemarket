@@ -26,7 +26,7 @@ email telling you that you have an account on that server and how to change your
 password there. To change the password you will need to use the Command-Line
 Interface (CLI).  You can get this by installing the appropriate packages from
 the [MySQL Downloads Page](https://dev.mysql.com/downloads/) or by "apt install"
-or "port install" depending on whether you have a Mac or Windows machine.
+or "port install" depending on whether you have a Mac or Windows machine.  
 3. To log into the MySQL you issue the command:
 
       `mysql -u <userid> -p -h riku.shoshin.uwaterloo.ca`
@@ -86,7 +86,14 @@ or "port install" depending on whether you have a Mac or Windows machine.
 11.Select the data from Foo to satisfy yourself that you have updated the data
    in the Foo table.
 
-12. You should look at the gpa1.py and gpa3.py code and run it to satisfy
+12. To write Python code that interactions with the MySQL database you will need
+    to install the pymysql and cryptoography modules:
+
+    `pip install pymysql`
+
+    `pip install cryptography`
+    
+    You should look at the gpa1.py and gpa3.py code and run it to satisfy
     yourself that you can connect to the database using python.
 
 When you have completed this, you are ready to move on to README.md in the
