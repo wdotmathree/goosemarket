@@ -19,7 +19,7 @@ because of one of the defects) you are required to
 
 1. Create an issue because of a defect in the code.
 2. Create a branch for resolving the issue.  The branch name should follow the
-Gitlab naming convention of `issue-#<issueNumber>-description`
+Gitlab naming convention of `issue-<issueNumber>-description`
 3. Solving the defects, including creating a testcase for the defect that does
 not currently have a testcase for it.
 4. Add the code to your git repo.
