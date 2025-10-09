@@ -39,7 +39,7 @@ def get_connection():
 			'host': 'riku.shoshin.uwaterloo.ca',
 			'user': user,
 			'password': password,
-			'database': 'SE101_Team_07',
+			'database': "SE101_Team_07"
 		}
 		_connection_pool = pooling.MySQLConnectionPool(pool_size=2, **_db_config)
 	return _connection_pool.get_connection()
@@ -63,3 +63,24 @@ def add(task):
 				conn.commit()
 	except Error as e:
 		raise Exception(f"Add failed: {e}")
+
+def update(task):
+	# task: (item, type, started, due, done)
+	item, type_, started, due, done = task
+	started_dt = _prepare_datetime(started)
+	due_dt = _prepare_datetime(due)
+	done_dt = _prepare_datetime(done)
+	try:
+		with get_connection() as conn:
+			with conn.cursor() as cursor:
+				cursor.execute("SELECT 1 FROM todo WHERE name=%s", (item,))
+				if cursor.fetchone():
+					cursor.execute(
+						"UPDATE todo SET userid=%s, type=%s, started=%s, due=%s, done=%s WHERE name=%s",
+						(user, type_, started_dt, due_dt, done_dt, item)
+					)
+					conn.commit()
+				else:
+					raise Exception("Update failed: item does not exist")
+	except Error as e:
+		raise Exception(f"Update failed: {e}")
