@@ -7,7 +7,7 @@ def get_all_tasks():
 	# Helper to fetch all tasks from DB for assertions
 	with get_connection() as conn:
 		with conn.cursor() as cursor:
-			cursor.execute("SELECT id, name, userid, type, started, due, done FROM todo")
+			cursor.execute("SELECT userid, name, type, started, due, done FROM todo")
 			return [row for row in cursor.fetchall()]
 
 def clear():
@@ -21,7 +21,7 @@ def test_add_task():
 	task = ("task1", "work", datetime.now(), datetime.now() + timedelta(days=1), None)
 	add(task)
 	all_tasks = get_all_tasks()
-	assert any(t[0] == "task1" for t in all_tasks)
+	assert any(t[1] == "task1" for t in all_tasks)
 
 def test_add_existing_task():
 	clear()
@@ -43,5 +43,5 @@ def test_add_multiple_tasks():
 	add(task1)
 	add(task2)
 	all_tasks = get_all_tasks()
-	assert any(t[0] == "task1" for t in all_tasks)
-	assert any(t[0] == "task2" for t in all_tasks)
+	assert any(t[1] == "task1" for t in all_tasks)
+	assert any(t[1] == "task2" for t in all_tasks)

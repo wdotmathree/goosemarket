@@ -39,7 +39,7 @@ def get_connection():
 			'host': 'riku.shoshin.uwaterloo.ca',
 			'user': user,
 			'password': password,
-			'database': "se101_group_7"
+			'database': 'SE101_Team_07',
 		}
 		_connection_pool = pooling.MySQLConnectionPool(pool_size=2, **_db_config)
 	return _connection_pool.get_connection()
