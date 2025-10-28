@@ -9,17 +9,25 @@ In scope:
 
 * Web app for account creation and fake balance management
 
+* Accounts email verification, only allowing uWaterloo emails
+
 * Ability to create and predict events on campus-related questions (Yes/No events)
+
+* Sorting of events by category to show users relevant events
 
 * Automatic or admin-based event resolution
 
 * Leaderboard and stats system to encourage engagement
+
+* Admin panel for site moderation and management
 
 * Secure backend & frontend
 
 Out of scope:
 
 * Real currency or crypto integration
+
+* Multi outcome events (more than two possible outcomes)
 
 ## Objective
 GooseMarket's objective is to create a fun and competitive web application that allows users across UWaterloo to spend points on predictions about campus-related events, and compete with their friends for the top step of the leaderboard.
@@ -29,13 +37,14 @@ GooseMarket's objective is to create a fun and competitive web application that 
     * Login / Signup
     * Dashboard with current events
     * Event creation and prediction interface
-    * Groups page
+    * Groups/Categories page
     * Leaderboard
 * Backend API
     * User management & Authentication (email verification)
     * Event management (create, predict, resolve)
     * Prediction resolution logic (payouts)
     * Admin panel for moderation (e.g. approving events)
+    * User statistic tracking (for leaderboard)
 * Database
     * Users, events, predictions, groups
 
