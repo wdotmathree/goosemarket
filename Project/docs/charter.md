@@ -68,7 +68,12 @@ GooseMarket's objective is to create a fun and competitive web application that 
     * Balancing token economy
 
 
-##Success Criteria
+
+
+
+
+
+## Success Criteria
 
 The project is successful when:
 
@@ -79,16 +84,18 @@ The project is successful when:
 * Security basics are met (SQL injection/XSS protection & secure auth).
 * A simple user guide or help section exists.
 
-##Risks
+## Risks
+
 * User Abuse / Cheating: Attempts to manipulate prediction outcomes or create spam events
-* Security Risks: Unauthorized access, bot sign‑ups, SQL or XSS attacks
+* Security Risks: Unauthorized access, bot sign-ups, SQL or XSS attacks
 * Scalability Challenges: High traffic during peak campus events (election, exam season)
 * Ethical / Policy Concerns: Risk of platform being interpreted as gambling
-* Maintenance & Moderation Load: Student‑run team capacity may be limited
+* Maintenance & Moderation Load: Student-run team capacity may be limited
 
 ## Constraints
+
 * Only @uwaterloo.ca emails allowed
 * Fake currency system — no financial value or conversion
 * Must comply with UWaterloo policies & ethical standards
-* Web‑only experience (desktop/mobile web)
+* Web-only experience (desktop/mobile web)
 * Limited admin/moderation resources
