@@ -1,56 +1,138 @@
-## GooseMarket User Stories
-
-### Student User Stories
-
-As a student, I want to sign up using my @uwaterloo.ca email  
-so that only Waterloo students can access the platform.
-
-As a student, I want to verify my email  
-so that I can securely activate my GooseMarket account.
-
-As a student, I want to receive Goose Dollars for logging in and engaging  
-so that I can participate without spending real money.
-
-As a student, I want to browse open prediction events  
-so that I can easily find interesting campus topics to bet on.
-
-As a student, I want to filter events by category or group (e.g. SE, Math, Eng)  
-so that I can see predictions relevant to my interests.
-
-As a student, I want to create new prediction events  
-so that I can ask the community about real Waterloo outcomes.
-
-As a student, I want to place predictions using Goose Dollars  
-so that I can participate in the market and try to win currency.
-
-As a student, I want to view a leaderboard  
-so that I can compare my performance with other students and compete.
-
-As a student, I want to see my statistics and past bets  
-so that I can learn from my predictions and track my progress.
+# GooseMarket Backlog
 
 ---
 
-### Admin / Moderator Stories
-
-As an admin, I want to approve or reject newly created events  
-so that only valid and appropriate events appear to users.
-
-As an admin, I want to resolve events and determine outcomes  
-so that predictions can be completed and payouts issued fairly.
-
-As an admin, I want to reverse or adjust payouts if needed  
-so that incorrect or disputed resolutions can be corrected.
-
-As an admin, I want to monitor user activity and reports  
-so that I can prevent abuse, spam, and cheating.
-
-As an admin, I want access to a moderation dashboard  
-so that I can easily manage events and user issues.
+## Story: User sign in
+- Create database 
+- Create login/signup pages
+- Implement authentication
+- Create account schema in database
 
 ---
 
-### System Goal (High-level)
+## Story: Create a poll
+- Add poll schema to database
+- API for creating poll
+- Frontend for creating poll
 
-As a platform, I want to maintain secure authentication and prevent SQL injection/XSS attacks  
-so that user accounts and data remain protected.
+---
+
+## Story: View events
+- Homepage to view all events
+- Sort events by tag
+- View individual event pages
+
+---
+
+## Story: Buying and selling event shares
+- Database schema for storing trades/shares
+- UI for buying and selling shares on event pages
+- API for buying and selling
+- Automatic market making system for handling prices
+
+---
+
+## Story: View your own current positions
+- UI for viewing positions (click to access event page to trade)
+- API call for looking at all open positions
+
+---
+
+## Story: View user pages
+- UI for displaying user pages with trades and statistics
+- API call for getting the user information and trades
+
+---
+
+## Story: Conclude events
+- UX for when an event concludes
+- API for handling payouts and concluding event
+
+---
+
+## Story: Subscribe to tags
+- UI for subscribing to tags
+- API for subscribing to tags
+- Subscribed tags viewing page
+
+---
+
+## Story: View leaderboard
+- Sort users by current balance
+- Page to display the top X users by balance, PNL
+
+---
+
+## Story: Login bonus
+- UI for displaying a login bonus for user login streaks
+- API for handling user login bonuses
+
+---
+
+# END OF MVP
+
+---
+
+## Story: Moderator approval for events
+- Implement moderator accounts and login
+- Require moderator approval for making events (through API)
+- Admin panel for approving/editing events
+
+---
+
+## Story: Email verification (Missing from MVP)
+- Add email verification token system
+- Send verification email on signup
+- Verification endpoint to validate token
+- UI flow for "verify your email"
+- Restrict access until verified
+
+---
+
+## Story: Fake currency earnings (non-login tasks)
+- Logic for earning Goose Dollars (login streak, predictions, activity)
+- Anti-abuse / bot detection rules
+- Database table for tracking currency rewards
+- Notification UI for earned Goose Dollars
+
+---
+
+## Story: Security protections
+- Implement SQL injection prevention
+- XSS filtering & sanitization
+- Rate limiting (login, event creation, trading)
+- Error logging and security alerts
+
+---
+
+## Story: Help & onboarding guide
+- Create help page explaining prediction system
+- Add examples of events, payouts, and trading
+- Add FAQ for rules, ethics, campus guidelines
+- Onboarding tutorial for new users
+
+---
+
+## Story: Dispute resolution
+- Admin interface to review event disputes
+- API endpoint to file disputes
+- UI allowing users to request review of resolved event
+- Admin tools to reverse payouts if needed
+
+---
+
+## Story: Group / Faculty support (e.g. SE, MATH, ENG)
+- Ability to join groups
+- Group-based event filtering
+- Group leaderboard display
+- API for group membership & stats
+
+---
+
+## Story: Abuse / Cheating Prevention
+- Spam protection for event creation
+- Duplicate account mitigation (email / device checks)
+- Reporting system for suspicious events/users
+- Admin tools to flag & restrict accounts
+
+---
