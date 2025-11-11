@@ -77,6 +77,8 @@ def create_poll():
             return jsonify({"error": "Creator ID must be a valid integer"}), 400
         
         supabase = get_supabase()
+        if not supabase:
+            return jsonify({"error": "Database connection not available"}), 503
         
         # Verify creator exists
         user_result = supabase.table("users").select("id").eq("id", creator).execute()
@@ -128,6 +130,8 @@ def get_poll(poll_id):
     """
     try:
         supabase = get_supabase()
+        if not supabase:
+            return jsonify({"error": "Database connection not available"}), 503
         
         result = supabase.table("polls").select("*").eq("id", poll_id).execute()
         
@@ -178,6 +182,8 @@ def edit_poll(poll_id):
             return jsonify({"error": "Creator ID must be a valid integer"}), 400
         
         supabase = get_supabase()
+        if not supabase:
+            return jsonify({"error": "Database connection not available"}), 503
         
         # Fetch the poll
         result = supabase.table("polls").select("*").eq("id", poll_id).execute()
