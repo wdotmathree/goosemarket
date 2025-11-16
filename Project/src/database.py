@@ -48,3 +48,45 @@ def approve_poll(poll_id: int) -> Dict[str, Any]:
         raise ValueError(f"No poll found with id {poll_id}")
 
     return data[0]
+
+def update_poll(
+    poll_id: int,
+    title: Optional[str] = None,
+    description: Optional[str] = None,
+    ends_at: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Update fields of a poll with the given id.
+    Any argument left as None will NOT be changed.
+
+    Example usage:
+        update_poll(1, title="New title")
+        update_poll(2, description="New desc", ends_at="2025-12-01T00:00:00Z")
+    """
+    supabase = get_supabase()
+
+    update_fields: Dict[str, Any] = {}
+    if title is not None:
+        update_fields["title"] = title
+    if description is not None:
+        update_fields["description"] = description
+    if ends_at is not None:
+        update_fields["ends_at"] = ends_at
+
+    if not update_fields:
+        raise ValueError("At least one field (title, description, ends_at) must be provided")
+
+    response = (
+        supabase
+        .table("polls")
+        .update(update_fields)
+        .eq("id", poll_id)
+        .select("id, title, description, created_at, ends_at, public")
+        .execute()
+    )
+
+    data = response.data or []
+    if not data:
+        raise ValueError(f"No poll found with id {poll_id}")
+
+    return data[0]
