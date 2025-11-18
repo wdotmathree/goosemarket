@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "./index.css";
 import Leaderboard from "./pages/Leaderboard.jsx";
 
+import CreateEvent from "./pages/CreateEvent.jsx";
 
 import Login from "./pages/Home.jsx";
 import OTPVerification from "./pages/OTPVerification.jsx";
@@ -53,6 +54,15 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     </Layout>
   }
 />
+<Route
+  path="/create"
+  element={
+    <Layout>
+      <CreateEvent />
+    </Layout>
+  }
+/>
+
 
           </Routes>
         </BrowserRouter>
