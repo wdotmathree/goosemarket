@@ -1,5 +1,5 @@
 import os
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
@@ -26,10 +26,9 @@ def get_unapproved_polls() -> List[Dict[str, Any]]:
     )
     return result.data or []
 
-def approve_poll(poll_id: int) -> Dict[str, Any]:
+def approve_poll(poll_id: int) -> None:
     """
     Set public = True for the poll with the given id.
-    Returns the updated poll row.
     Raises ValueError if no poll is found.
     """
     supabase = get_supabase()
@@ -39,53 +38,51 @@ def approve_poll(poll_id: int) -> Dict[str, Any]:
         .table("polls")
         .update({"public": True})
         .eq("id", poll_id)
-        .select("id, title, description, created_at, ends_at, public")
         .execute()
     )
 
-    data = response.data or []
+    data = getattr(response, "data", None) or []
     if not data:
         raise ValueError(f"No poll found with id {poll_id}")
 
     return None
 
+
 def update_poll(
     poll_id: int,
+    *,
     title: Optional[str] = None,
     description: Optional[str] = None,
     ends_at: Optional[str] = None,
-) -> Dict[str, Any]:
+) -> None:
     """
-    Update fields of a poll with the given id.
-    Any argument left as None will NOT be changed.
-
-    Example usage:
-        update_poll(1, title="New title")
-        update_poll(2, description="New desc", ends_at="2025-12-01T00:00:00Z")
+    Update fields of a poll (e.g. title, description, ends_at).
+    Only fields that are not None will be updated.
+    Raises ValueError if no poll is found or no fields are provided.
     """
     supabase = get_supabase()
 
-    update_fields: Dict[str, Any] = {}
-    if title is not None:
-        update_fields["title"] = title
-    if description is not None:
-        update_fields["description"] = description
-    if ends_at is not None:
-        update_fields["ends_at"] = ends_at
+    updates: Dict[str, Any] = {}
 
-    if not update_fields:
-        raise ValueError("At least one field (title, description, ends_at) must be provided")
+    if title is not None:
+        updates["title"] = title
+    if description is not None:
+        updates["description"] = description
+    if ends_at is not None:
+        updates["ends_at"] = ends_at
+
+    if not updates:
+        raise ValueError("No fields to update were provided")
 
     response = (
         supabase
         .table("polls")
-        .update(update_fields)
+        .update(updates)
         .eq("id", poll_id)
-        .select("id, title, description, created_at, ends_at, public")
         .execute()
     )
 
-    data = response.data or []
+    data = getattr(response, "data", None) or []
     if not data:
         raise ValueError(f"No poll found with id {poll_id}")
 
