@@ -35,6 +35,15 @@ ReactDOM.createRoot(document.getElementById("root")).render(
                 </Layout>
               }
             />
+            <Route
+  path="/event/:id"
+  element={
+    <Layout>
+      <EventDetail />
+    </Layout>
+  }
+/>
+
 
           </Routes>
         </BrowserRouter>
