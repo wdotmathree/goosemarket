@@ -10,23 +10,26 @@ def add_tag_to_poll():
     Expected JSON payload:
     {
         "tag": "Tag name"
-        "ID": "Poll ID"
+        "ID": Poll ID
     }
     """
     try:
         data = request.get_json()
-
+        print("Hello")
         #Validate required fields
         if not data:
             return jsonify({"error": "Request body is required"}), 400
 
         tag = data.get("tag", "").strip()
         ID = data.get("ID", "").strip()
+        print("Hey")
         
         try:
             ID = int(ID)
         except (ValueError, TypeError):
             return jsonify({"error": "Poll ID must be a valid integer"}), 400
+
+        print("Hi")
         
         supabase = get_supabase()
 
@@ -35,8 +38,8 @@ def add_tag_to_poll():
 
         response = supabase.table("tags").select("id").eq("name", tag).execute()
 
-        if response.error:
-            return jsonify({"error": f"Database error: {response.error.message}"}), 503
+        if getattr(response, "error", None):
+            return jsonify({"error": "Database error"}), 503
 
         if len(response.data) == 0:
             #Create tag if doesn't already exist
@@ -53,7 +56,10 @@ def add_tag_to_poll():
             if not tagID:
                 return jsonify({"error": "Failed to create tag"}), 500
         else:
-            tagID = response.data[0]["id"]
+            if not response.data:
+                tagID = create_tag(tag)
+            else:
+                tagID = response.data[0]["id"]
 
         #Create poll-tag relation in database
         poll_tags_data = {
@@ -116,8 +122,8 @@ def get_all_tags():
         
         response = supabase.table("tags").select("*").ilike("name", search_pattern).execute()
 
-        if not response:
-            return jsonify("error", "Failed to retrieve tags"), 500
+        if getattr(response, "error", None):
+            return jsonify({"error": "Failed to retrieve tags"}), 500
         
         return jsonify({
             "message": "Successfully retrieved tags",
@@ -144,17 +150,23 @@ def get_tag_by_id():
         
         id = data.get("id", "").strip()
 
+        try:
+            id = int(id)
+        except (ValueError, TypeError):
+            return jsonify({"error": "ID must be a valid integer"}), 400
+
         supabase = get_supabase()
 
         if not supabase:
             return jsonify({"error": "Database connection not available"}), 503
         
-        search_pattern = f"%{id}%"
+        response = supabase.table("tags").select("*").eq("id", id).execute()
 
-        response = supabase.table("tags").select("*").ilike("name", search_pattern).execute()
+        if getattr(response, "error", None):
+            return jsonify({"error": "Failed to retrieve tag"}), 500
 
-        if not response:
-            return jsonify("error", "Failed to retrieve tag"), 500
+        if not response.data:
+            return jsonify({"error": "Tag not found"}), 404
         
         return jsonify({
             "message": "Successfully retrieved tag",
