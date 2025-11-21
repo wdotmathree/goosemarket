@@ -12,12 +12,9 @@ from api.polls import create_poll, get_poll, edit_poll, list_polls
 
 # Import price functions
 from api.prices import get_price
+from api.trade import buy_shares, sell_shares
 
 app = Flask(__name__)
-
-@app.route("/api/python")
-def hello_world():
-    return "<p>Hello, World!</p>"
 
 @app.route("/api/polls", methods=["GET"])
 def list_polls_route():
@@ -44,3 +41,14 @@ def get_price_route(poll_id):
     """Get current market price for a poll."""
     return get_price(poll_id)
 
+
+@app.route("/api/trades/buy", methods=["POST"])
+def buy_shares_route():
+    """Purchase shares at current market price."""
+    return buy_shares()
+
+
+@app.route("/api/trades/sell", methods=["POST"])
+def sell_shares_route():
+    """Sell shares back to the market."""
+    return sell_shares()
