@@ -41,7 +41,6 @@ def get_price_route(poll_id):
     """Get current market price for a poll."""
     return get_price(poll_id)
 
-
 @app.route("/api/trades/buy", methods=["POST"])
 def buy_shares_route():
     """Purchase shares at current market price."""
@@ -52,3 +51,5 @@ def buy_shares_route():
 def sell_shares_route():
     """Sell shares back to the market."""
     return sell_shares()
+
+app.run(port=5328, debug=True)
