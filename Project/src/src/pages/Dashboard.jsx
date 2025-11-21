@@ -20,10 +20,10 @@ export default function Dashboard() {
   const { data: events = [], isLoading } = useQuery({
     queryKey: ["events"],
     queryFn: async () => {
-  const res = await fetch("/src/entities/event.json");
+  const res = await fetch("/app/entities/event.json");
   if (!res.ok) throw new Error("Failed to load events");
   const json = await res.json();
-  return json.events || []; // ✅ if your JSON has "events" key
+  return json.events || []; // if your JSON has "events" key
 }
 
   });

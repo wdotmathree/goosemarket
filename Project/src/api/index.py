@@ -44,3 +44,4 @@ def get_price_route(poll_id):
     """Get current market price for a poll."""
     return get_price(poll_id)
 
+app.run(port=5328, debug=True)
