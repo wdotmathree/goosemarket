@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, make_response
 from datetime import datetime, timezone
 import sys
 import os
@@ -6,6 +6,8 @@ import os
 # Add parent directory to path to import database module
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from database import get_supabase
+
+from api.auth import login, register, verify_email
 
 # Import poll functions
 from api.polls import create_poll, get_poll, edit_poll, list_polls
@@ -15,6 +17,28 @@ from api.prices import get_price
 from api.trade import buy_shares, sell_shares
 
 app = Flask(__name__)
+
+@app.route("/api/auth/login", methods=["POST"])
+def login_route():
+    return login()
+
+@app.route("/api/auth/register", methods=["POST"])
+def register_route():
+    return register()
+
+@app.route("/api/auth/verify", methods=["POST"])
+def verify_email_route():
+    return verify_email()
+
+@app.route("/api/auth/logout", methods=["GET", "POST"])
+def logout_route():
+    """Logout user by clearing auth cookies."""
+    res = make_response()
+    res.delete_cookie("sb-access-token")
+    res.delete_cookie("sb-refresh-token")
+    res.delete_cookie("user-info")
+    res.headers.add("Location", "/")
+    return res, 303
 
 @app.route("/api/polls", methods=["GET"])
 def list_polls_route():
