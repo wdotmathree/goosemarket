@@ -22,16 +22,13 @@ export default function Login() {
 	// Login state
 	const [loginEmail, setLoginEmail] = useState("");
 	const [loginPassword, setLoginPassword] = useState("");
+	const [update, setUpdate] = useState(false);
 
 	// Sign up state
 	const [signupEmail, setSignupEmail] = useState("");
 	const [signupPassword, setSignupPassword] = useState("");
 	const [signupUsername, setSignupUsername] = useState("");
 	const [confirmPassword, setConfirmPassword] = useState("");
-
-	// Admin login state
-	const [adminUsername, setAdminUsername] = useState("");
-	const [adminPassword, setAdminPassword] = useState("");
 
 	// Verify email
 	const [verifyEmail, setVerifyEmail] = useState("");
@@ -54,9 +51,6 @@ export default function Login() {
 			return;
 		}
 
-		// Ensure normal users are NOT admins
-		setIsAdmin(false);
-
 		fetch("/api/auth/login", {
 			method: "POST",
 			headers: {
@@ -69,7 +63,7 @@ export default function Login() {
 		})
 			.then((res) => {
 				if (res.ok) {
-					navigate("/dashboard");
+					setUpdate(!update);
 				}
 				return res.json();
 			})
@@ -97,9 +91,6 @@ export default function Login() {
 			return;
 		}
 
-		// Normal signup users are NOT admins
-		setIsAdmin(false);
-
 		fetch("/api/auth/register", {
 			method: "POST",
 			headers: {
@@ -120,24 +111,13 @@ export default function Login() {
 			});
 	};
 
-	const handleAdminLogin = (e) => {
-		e.preventDefault();
-		setError("");
-
-		if (adminUsername !== "1234" || adminPassword !== "1234") {
-			setError("Invalid admin credentials");
-			return;
-		}
-
-		// Mark as admin
-		setIsAdmin(true);
-
-		navigate(createPageUrl("admin"));
-	};
-
 	// Detect email verification token in URL hash
 	useEffect(() => {
 		if (document.cookie.includes("user-info")) {
+			let info = JSON.parse(atob(document.cookie.split("user-info=")[1].split(";")[0]));
+			setIsAdmin(info.admin);
+			/// TODO: Set other user context info
+
 			navigate("/dashboard");
 			return;
 		}
@@ -169,7 +149,7 @@ export default function Login() {
 					setError(data["error"] || "Email verification failed");
 				});
 		}
-	}, [navigate]);
+	}, [navigate, update]);
 
 	const wrapSetActiveTab = (tab) => {
 		setError("");
@@ -212,12 +192,11 @@ export default function Login() {
 								<CardDescription className="text-slate-400">
 									{activeTab === "login" && "Sign in with your UWaterloo email"}
 									{activeTab === "signup" && "Create your GooseMarket account"}
-									{activeTab === "admin" && "Admin access only"}
 								</CardDescription>
 							</CardHeader>
 							<CardContent>
 								<Tabs value={activeTab} onValueChange={wrapSetActiveTab} className="w-full">
-									<TabsList className="grid w-full grid-cols-3 bg-slate-800 mb-6">
+									<TabsList className="grid w-full grid-cols-2 bg-slate-800 mb-6">
 										<TabsTrigger
 											value="login"
 											className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
@@ -229,12 +208,6 @@ export default function Login() {
 											className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white"
 										>
 											Sign Up
-										</TabsTrigger>
-										<TabsTrigger
-											value="admin"
-											className="data-[state=active]:bg-violet-600 data-[state=active]:text-white"
-										>
-											Admin
 										</TabsTrigger>
 									</TabsList>
 
@@ -250,7 +223,7 @@ export default function Login() {
 										<form onSubmit={handleLogin} className="space-y-4">
 											<div className="space-y-2">
 												<Label htmlFor="login-email" className="text-slate-300">
-													Email
+													Email <span className="text-red-500">*</span>
 												</Label>
 												<Input
 													id="login-email"
@@ -264,7 +237,7 @@ export default function Login() {
 											</div>
 											<div className="space-y-2">
 												<Label htmlFor="login-password" className="text-slate-300">
-													Password
+													Password <span className="text-red-500">*</span>
 												</Label>
 												<Input
 													id="login-password"
@@ -279,7 +252,7 @@ export default function Login() {
 											<Button
 												type="button"
 												variant="link"
-												className="text-emerald-600 hover:text-emerald-300 p-0 h-auto"
+												className="text-emerald-500 hover:text-emerald-300 p-0 h-auto"
 											>
 												Forgot password?
 											</Button>
@@ -289,16 +262,6 @@ export default function Login() {
 											>
 												Sign In
 											</Button>
-
-											<div className="pt-4 text-center">
-												<button
-													type="button"
-													onClick={() => setActiveTab("admin")}
-													className="text-sm text-slate-400 hover:text-violet-400 transition-colors"
-												>
-													Are you an admin? <span className="underline">Click here</span>
-												</button>
-											</div>
 										</form>
 									</TabsContent>
 
@@ -307,7 +270,7 @@ export default function Login() {
 										<form onSubmit={handleSignup} className="space-y-4">
 											<div className="space-y-2">
 												<Label htmlFor="signup-email" className="text-slate-300">
-													Email
+													Email <span className="text-red-500">*</span>
 												</Label>
 												<Input
 													id="signup-email"
@@ -334,7 +297,7 @@ export default function Login() {
 											</div>
 											<div className="space-y-2">
 												<Label htmlFor="signup-password" className="text-slate-300">
-													Password
+													Password <span className="text-red-500">*</span>
 												</Label>
 												<Input
 													id="signup-password"
@@ -348,7 +311,7 @@ export default function Login() {
 											</div>
 											<div className="space-y-2">
 												<Label htmlFor="confirm-password" className="text-slate-300">
-													Confirm Password
+													Confirm Password <span className="text-red-500">*</span>
 												</Label>
 												<Input
 													id="confirm-password"
@@ -366,56 +329,6 @@ export default function Login() {
 											>
 												Continue
 											</Button>
-										</form>
-									</TabsContent>
-
-									{/* Admin Login Tab */}
-									<TabsContent value="admin">
-										<form onSubmit={handleAdminLogin} className="space-y-4">
-											<div className="space-y-2">
-												<Label htmlFor="admin-username" className="text-slate-300">
-													Username
-												</Label>
-												<Input
-													id="admin-username"
-													type="text"
-													placeholder="Enter admin username"
-													value={adminUsername}
-													onChange={(e) => setAdminUsername(e.target.value)}
-													className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition-all"
-													required
-												/>
-											</div>
-											<div className="space-y-2">
-												<Label htmlFor="admin-password" className="text-slate-300">
-													Password
-												</Label>
-												<Input
-													id="admin-password"
-													type="password"
-													placeholder="••••••••"
-													value={adminPassword}
-													onChange={(e) => setAdminPassword(e.target.value)}
-													className="bg-slate-800 border-slate-700 text-white focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 transition-all"
-													required
-												/>
-											</div>
-											<Button
-												type="submit"
-												className="w-full bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-600 hover:to-violet-700 text-white font-semibold shadow-lg shadow-violet-500/20"
-											>
-												Admin Sign In
-											</Button>
-
-											<div className="pt-4 text-center">
-												<button
-													type="button"
-													onClick={() => setActiveTab("login")}
-													className="text-sm text-slate-400 hover:text-emerald-400 transition-colors"
-												>
-													Back to user login
-												</button>
-											</div>
 										</form>
 									</TabsContent>
 								</Tabs>

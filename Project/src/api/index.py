@@ -70,7 +70,6 @@ def buy_shares_route():
     """Purchase shares at current market price."""
     return buy_shares()
 
-
 @app.route("/api/trades/sell", methods=["POST"])
 def sell_shares_route():
     """Sell shares back to the market."""

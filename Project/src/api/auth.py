@@ -26,7 +26,7 @@ def login():
 		return jsonify({"error": "Invalid login credentials"}), 401
 	
 	try:
-		username = supabase.table("profiles").select("username").eq("auth_id", res.user.id).execute().data[0]["username"]
+		username, admin = supabase.table("profiles").select("username", "admin").eq("auth_id", res.user.id).execute().data[0].values()
 	except Exception as e:
 		return jsonify({"error": "Failed to retrieve user profile: " + str(e)}), 500
 
@@ -34,7 +34,7 @@ def login():
 	res = make_response()
 	res.set_cookie("sb-access-token", token_data.access_token, expires=token_data.expires_at, httponly=True)
 	res.set_cookie("sb-refresh-token", token_data.refresh_token, expires=token_data.expires_at, httponly=True)
-	res.set_cookie("user-info", b64encode(dumps({"username": username, "email": email}).encode()).decode(), expires=token_data.expires_at)
+	res.set_cookie("user-info", b64encode(dumps({"username": username, "email": email, "admin": admin}).encode()).decode(), expires=token_data.expires_at)
 	return res, 200
 
 
@@ -102,19 +102,18 @@ def verify_email():
 	if not "expires_at" in data:
 		return jsonify({"error": "Invalid token data"}), 400
 
-	padded = token.split(".")[1]
-	padded += "=" * (4 - len(padded) % 4)
+	padded = token.split(".")[1] + "=="
 	email = loads(b64decode(padded).decode()).get("email")
 
 	supabase = get_supabase()
 	try:
-		username = supabase.table("profiles").select("username").eq("email", email).execute().data[0]["username"]
+		username, admin = supabase.table("profiles").select("username", "admin").eq("email", email).execute().data[0].values()
 	except Exception as e:
 		return jsonify({"error": "Failed to retrieve user profile: " + str(e)}), 500
 
 	res = make_response()
 	res.set_cookie("sb-access-token", token, expires=data.get("expires_at"), httponly=True)
 	res.set_cookie("sb-refresh-token", data.get("refresh_token"), expires=data.get("expires_at"), httponly=True)
-	res.set_cookie("user-info", b64encode(dumps({"username": username, "email": email}).encode()).decode(), expires=data.get("expires_at"))
+	res.set_cookie("user-info", b64encode(dumps({"username": username, "email": email, "admin": admin}).encode()).decode(), expires=data.get("expires_at"))
 
 	return res, 200
