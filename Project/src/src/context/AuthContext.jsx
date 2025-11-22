@@ -11,11 +11,12 @@ export function AuthProvider({ children }) {
 
 	useEffect(() => {
 		// Load from cookie
-		if (document.cookie.includes("user-info") === false) {
+		if (document.cookie.includes("user-info") == false) {
 			if (window.location.pathname !== "/login") window.location.href = "/login";
 			return;
 		}
 		const userInfo = JSON.parse(atob(document.cookie.split("user-info=")[1].split(";")[0]));
+		if (!userInfo && window.location.pathname !== "/login") window.location.href = "/login";
 
 		setIsAdmin(userInfo.admin);
 		setUsername(userInfo.username);

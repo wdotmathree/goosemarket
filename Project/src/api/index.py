@@ -1,5 +1,6 @@
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, request, jsonify, make_response, Response
 from datetime import datetime, timezone
+from functools import wraps
 import sys
 import os
 
@@ -7,7 +8,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from database import get_supabase
 
-from api.auth import login, register, verify_email
+from api.auth import login, register, verify_email, verify_token
 
 # Import poll functions
 from api.polls import create_poll, get_poll, edit_poll, list_polls
@@ -17,6 +18,29 @@ from api.prices import get_price
 from api.trade import buy_shares, sell_shares
 
 app = Flask(__name__)
+
+def protected(handler):
+    """
+    Decorator to protect routes that require authentication.
+    """
+    @wraps(handler)
+    def wrapper(*args, **kwargs):
+        token = request.cookies.get("sb-access-token")
+        tok = verify_token(token)
+        if tok is None:
+            res = make_response()
+            res.delete_cookie("sb-access-token")
+            res.delete_cookie("sb-refresh-token")
+            res.delete_cookie("user-info")
+            res.headers.add("Location", "/login")
+            return res, 303
+        res, stat = handler(*args, **kwargs)
+        if tok[0] != token:
+            res.set_cookie("sb-access-token", tok[0], expires=tok[2], httponly=True)
+            res.set_cookie("sb-refresh-token", tok[1], expires=tok[2], httponly=True)
+        return res, stat
+    return wrapper
+
 
 @app.route("/api/auth/login", methods=["POST"])
 def login_route():
@@ -41,36 +65,43 @@ def logout_route():
     return res, 303
 
 @app.route("/api/polls", methods=["GET"])
+@protected
 def list_polls_route():
     """List polls with pagination and filters."""
     return list_polls()
 
 @app.route("/api/polls", methods=["POST"])
+@protected
 def create_poll_route():
     """Create a new poll."""
     return create_poll()
 
 @app.route("/api/polls/<poll_id>", methods=["GET"])
+@protected
 def get_poll_route(poll_id):
     """Retrieve a poll by ID."""
     return get_poll(poll_id)
 
 @app.route("/api/polls/<poll_id>", methods=["PUT"])
+@protected
 def edit_poll_route(poll_id):
     """Edit a poll."""
     return edit_poll(poll_id)
 
 @app.route("/api/polls/<poll_id>/price", methods=["GET"])
+@protected
 def get_price_route(poll_id):
     """Get current market price for a poll."""
     return get_price(poll_id)
 
 @app.route("/api/trades/buy", methods=["POST"])
+@protected
 def buy_shares_route():
     """Purchase shares at current market price."""
     return buy_shares()
 
 @app.route("/api/trades/sell", methods=["POST"])
+@protected
 def sell_shares_route():
     """Sell shares back to the market."""
     return sell_shares()
