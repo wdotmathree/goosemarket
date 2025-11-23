@@ -17,6 +17,9 @@ from api.polls import create_poll, get_poll, edit_poll, list_polls
 from api.prices import get_price
 from api.trade import buy_shares, sell_shares
 
+# Import tag functions
+from api.tags import add_tag_to_poll, create_tag, get_all_tags, get_tag_by_id
+
 app = Flask(__name__)
 
 def protected(handler):
@@ -105,5 +108,20 @@ def buy_shares_route():
 def sell_shares_route():
     """Sell shares back to the market."""
     return sell_shares()
+
+@app.route("/api/tags/add", methods=["POST"])
+@protected
+def add_tag_route():
+    return add_tag_to_poll()
+
+@app.route("/api/tags/all", methods=["POST"])
+@protected
+def get_all_tags_route():
+    return get_all_tags()
+
+@app.route("/api/tags/id", methods=["POST"])
+@protected
+def get_tag_by_id_route():
+    return get_tag_by_id()
 
 app.run(port=5328, debug=True)
