@@ -3,10 +3,11 @@ from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
-load_dotenv()
+from flask import request
+
 def get_supabase() -> Client:
     url = os.getenv("SUPABASE_URL")
-    key = os.getenv("SERVICE_ROLE_KEY")
+    key = os.getenv("SUPABASE_SECRET_KEY")
     return create_client(url, key)
 
 def get_unapproved_polls() -> List[Dict[str, Any]]:
