@@ -36,6 +36,8 @@ def get_data():
         user_id = data.get("user_id", "").strip()
         poll_id = data.get("poll_id", "").strip()
         status = data.get("status", "").strip().lower()
+        page_size = data.get("page_size", 20)
+        page = data.get("page", 1)
 
         try:
             user_id = int(user_id)
@@ -56,7 +58,7 @@ def get_data():
         balance = user.get("balance", 0.0)
 
         #Get user positions
-        positions_response = get_positions(user_id, poll_id, status)
+        positions_response = get_positions(user_id, poll_id, status, page_size, page)
         if positions_response.status_code != 200:
             return positions_response
         positions_data = positions_response.get_json()
