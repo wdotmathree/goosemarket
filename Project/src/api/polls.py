@@ -81,12 +81,12 @@ def create_poll():
             creator = int(creator)
         except (ValueError, TypeError):
             return jsonify({"error": "Creator ID must be a valid integer"}), 400
-        
+
         # Validate tags (optional)
         if tags is not None:
             if not isinstance(tags, list):
                 return jsonify({"error": "Tags must be an array"}), 400
-            
+
             # Validate each tag is an integer
             validated_tags = []
             for tag in tags:
@@ -95,7 +95,7 @@ def create_poll():
                     validated_tags.append(tag_id)
                 except (ValueError, TypeError):
                     return jsonify({"error": "All tag IDs must be valid integers"}), 400
-            
+
             tags = validated_tags
 
         supabase = get_supabase()
@@ -106,7 +106,7 @@ def create_poll():
         user_result = supabase.table("users").select("id").eq("id", creator).execute()
         if not user_result.data:
             return jsonify({"error": "Creator user does not exist"}), 404
-        
+
         # Verify tags exist (if provided)
         if tags:
             tags_result = supabase.table("tags").select("id").in_("id", tags).execute()
@@ -144,12 +144,12 @@ def create_poll():
 
         created_poll = result.data[0]
         poll_id = created_poll["id"]
-        
+
         # Insert poll-tag associations if tags were provided
         if tags:
             poll_tags_data = [{"poll_id": poll_id, "tag_id": tag_id} for tag_id in tags]
             tags_result = supabase.table("poll_tags").insert(poll_tags_data).execute()
-            
+
             if not tags_result.data:
                 # Note: Poll was created but tags failed - could add cleanup logic here
                 return jsonify({
@@ -168,7 +168,7 @@ def create_poll():
 def list_polls():
     """
     List polls with pagination and optional filters.
-    
+
     Query parameters:
     - page: Page number (default: 1)
     - page_size: Results per page (default: 20, max: 100)
@@ -181,7 +181,7 @@ def list_polls():
         supabase = get_supabase()
         if not supabase:
             return jsonify({"error": "Database connection not available"}), 503
-        
+
         # Parse pagination parameters
         try:
             page = int(request.args.get('page', 1))
@@ -189,7 +189,7 @@ def list_polls():
                 page = 1
         except (ValueError, TypeError):
             page = 1
-        
+
         try:
             page_size = int(request.args.get('page_size', DEFAULT_PAGE_SIZE))
             if page_size < 1:
@@ -198,13 +198,13 @@ def list_polls():
                 page_size = MAX_PAGE_SIZE
         except (ValueError, TypeError):
             page_size = DEFAULT_PAGE_SIZE
-        
+
         # Calculate offset
         offset = (page - 1) * page_size
-        
+
         # Start building query
         query = supabase.table("polls").select("*", count="exact")
-        
+
         # Apply public filter (default to public only)
         public_filter = request.args.get('public', 'true').lower()
         if public_filter == 'true':
@@ -212,7 +212,7 @@ def list_polls():
         elif public_filter == 'false':
             query = query.eq("public", False)
         # If public_filter is anything else, don't filter by public status
-        
+
         # Apply creator filter
         creator = request.args.get('creator')
         if creator:
@@ -221,7 +221,7 @@ def list_polls():
                 query = query.eq("creator", creator_id)
             except (ValueError, TypeError):
                 return jsonify({"error": "Invalid creator ID"}), 400
-        
+
         # Apply tag filter (requires join with poll_tags table)
         tag = request.args.get('tag')
         if tag:
@@ -231,26 +231,26 @@ def list_polls():
                 query = (supabase.table("polls")
                         .select("polls.*, poll_tags!inner(tag_id)", count="exact")
                         .eq("poll_tags.tag_id", tag_id))
-                
+
                 # Reapply public filter after join
                 if public_filter == 'true':
                     query = query.eq("public", True)
                 elif public_filter == 'false':
                     query = query.eq("public", False)
-                
+
                 # Reapply creator filter if exists
                 if creator:
                     query = query.eq("creator", creator_id)
-                    
+
             except (ValueError, TypeError):
                 return jsonify({"error": "Invalid tag ID"}), 400
-        
+
         # Execute query with pagination
         result = query.order("created_at", desc=True).range(offset, offset + page_size - 1).execute()
-        
+
         polls = result.data if result.data else []
         total_count = result.count if hasattr(result, 'count') and result.count is not None else len(polls)
-        
+
         # Add has_ended flag to each poll
         current_time = datetime.now(timezone.utc)
         for poll in polls:
@@ -259,7 +259,7 @@ def list_polls():
                 poll["has_ended"] = ends_at <= current_time
             else:
                 poll["has_ended"] = False
-        
+
         # Apply status filter after fetching (since it's computed)
         status_filter = request.args.get('status')
         if status_filter:
@@ -269,9 +269,9 @@ def list_polls():
                 polls = [p for p in polls if p["has_ended"]]
             # Recalculate total if status filter applied (note: this is approximate)
             total_count = len(polls)
-        
+
         total_pages = (total_count + page_size - 1) // page_size
-        
+
         return jsonify({
             "polls": polls,
             "pagination": {
@@ -281,7 +281,7 @@ def list_polls():
                 "total_pages": total_pages
             }
         }), 200
-        
+
     except Exception as e:
         return jsonify({"error": f"Server error: {str(e)}"}), 500
 
@@ -313,6 +313,35 @@ def get_poll(poll_id):
 
     except Exception as e:
         return jsonify({"error": f"Server error: {str(e)}"}), 500
+
+def get_poll_data(poll_id):
+    """
+    Internal function to get poll data without Flask response wrapping.
+    """
+    try:
+        supabase = get_supabase()
+        if not supabase:
+            return None
+
+        result = supabase.table("polls").select("*").eq("id", poll_id).execute()
+
+        if not result.data:
+            return None
+
+        poll = result.data[0]
+
+        # Check if poll has ended (if ends_at is set)
+        if poll.get("ends_at"):
+            ends_at = datetime.fromisoformat(poll["ends_at"].replace("Z", "+00:00"))
+            current_time = datetime.now(timezone.utc)
+            poll["has_ended"] = ends_at <= current_time
+        else:
+            poll["has_ended"] = False
+
+        return poll
+
+    except Exception as e:
+        return None
 
 def edit_poll(poll_id):
     """

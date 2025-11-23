@@ -12,6 +12,8 @@ from api.auth import login, register, verify_email, verify_token
 
 # Import poll functions
 from api.polls import create_poll, get_poll, edit_poll, list_polls
+from api.positions import get_positions_endpoint
+from api.userinfo import get_data
 
 # Import price functions
 from api.prices import get_price
@@ -123,5 +125,18 @@ def get_all_tags_route():
 @protected
 def get_tag_by_id_route():
     return get_tag_by_id()
+
+@app.route("/api/positions", methods=["GET"])
+@protected
+def get_positions_route():
+    """Retrieve user positions."""
+    return get_positions_endpoint()
+
+@app.route("/api/user", methods=["GET"])
+@protected
+def get_user_info_route():
+    """Retrieve user information."""
+    return get_data()
+
 
 app.run(port=5328, debug=True)
