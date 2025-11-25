@@ -23,3 +23,16 @@ We can improve our planning a little bit so that our tasks are not blocking each
 
 Velocity:
 18
+
+## Week 3
+
+What went well:
+We have been able to integrate much of our backend with our frontend, so the app is finally useable.
+Everyone was able to work on backend tasks independently, we had no blocking tasks this week.
+We created the math behind calculating share prices, and how they change as users buy and sell, which is the main feature of our site.
+
+What can we improve:
+We could have had more communication between the frontend and backend developers, as the expected JSON in the frontend does not always match
+what the backend returns.
+
+Velocity: 25
