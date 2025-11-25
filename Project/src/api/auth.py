@@ -6,8 +6,11 @@ from typing import Optional
 import supabase as sb
 import jwt
 import os
+from datetime import datetime, timedelta, timezone
 
 from database import get_supabase
+
+DAILY_LOGIN_BONUS = 10  # Points awarded for first daily login (increases linearly with streaks)
 
 load_dotenv()
 jwks = jwt.PyJWKClient(os.getenv("SUPABASE_URL") + "/auth/v1/.well-known/jwks.json")
@@ -72,6 +75,9 @@ def login():
 		username, admin = supabase.table("profiles").select("username", "admin").eq("auth_id", res.user.id).execute().data[0].values()
 	except Exception as e:
 		return jsonify({"error": "Failed to retrieve user profile: " + str(e)}), 500
+	
+	# Apply daily bonus to user if applicable
+	login_bonus(res.user.id)
 
 	# Send everything back
 	token_data = res.session
@@ -195,3 +201,54 @@ def verify_email():
 	res.set_cookie("user-info", b64encode(dumps({"username": username, "email": email, "admin": admin}).encode()).decode(), expires=data.get("expires_at"))
 
 	return res, 200
+
+def login_bonus(user_id: int):
+	"""
+	Internal function when logging in a user to reset most recent login date
+	and give bonus points based on the user's streak if applicable."""
+	print("Hi")
+	try:
+		supabase = get_supabase()
+
+		profile_data = supabase.table("profiles").select("last_bonus", "current_streak", "balance").eq("auth_id", user_id).execute().data[0]
+		last_bonus = profile_data.get("last_bonus")
+		login_streak = profile_data.get("current_streak", 0)
+		balance = profile_data.get("balance", 0)
+		
+		print(f"Debug: last_bonus={last_bonus}, type={type(last_bonus)}")
+		
+		today = datetime.now(timezone.utc).date()
+
+		# Convert last_bonus to date if it's a string
+		if isinstance(last_bonus, str):
+			last_bonus_date = datetime.fromisoformat(last_bonus).date()
+		else:
+			last_bonus_date = last_bonus
+
+		print(f"Debug: today={today}, last_bonus_date={last_bonus_date}, diff={today - last_bonus_date}")
+
+		if today - last_bonus_date == timedelta(days=1):
+			print("Giving a bonus!")
+			# Give bonus
+			login_streak += 1
+			bonus = DAILY_LOGIN_BONUS * login_streak
+			new_balance = balance + bonus
+			supabase.table("profiles").update({
+				"last_bonus": today.isoformat(),
+				"current_streak": login_streak,
+				"balance": new_balance
+			}).eq("auth_id", user_id).execute()
+
+		elif today - last_bonus_date > timedelta(days=1):
+			# Reset streak
+			new_balance = balance + DAILY_LOGIN_BONUS
+			supabase.table("profiles").update({
+				"last_bonus": today.isoformat(),
+				"current_streak": 1,
+				"balance": new_balance
+			}).eq("auth_id", user_id).execute()
+	
+	except Exception as e:
+		print(f"Login bonus error: {str(e)}")
+		import traceback
+		traceback.print_exc()
