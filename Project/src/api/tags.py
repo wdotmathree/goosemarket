@@ -92,37 +92,24 @@ def create_tag(name: str) -> int:
     return result.data[0]["id"]
 
 def get_all_tags():
-    """Return all tags which contain the substring match. Passing an empty string as match returns all tags
-
-    Expected JSON payload:
+    """Return all tags
+    
+    Returns:
     {
-        "match": "String to match with tag"
-    }
-    """
+        "tags": ["tag1", "tag2", ...]
+    }"""
     try:
-        data = request.get_json()
-
-        # Validate required fields
-        if not data:
-            return jsonify({"error": "Request body is required"}), 400
-
-        # Pass is match = "" to return all tags, regardless of name
-        match = data.get("match", "").strip()
-
         supabase = get_supabase()
 
         if not supabase:
             return jsonify({"error": "Database connection not available"}), 503
 
-        search_pattern = f"%{match}%"
-
-        response = supabase.table("tags").select("*").ilike("name", search_pattern).execute()
+        response = supabase.table("tags").select("name").execute()
 
         if getattr(response, "error", None):
             return jsonify({"error": "Failed to retrieve tags"}), 500
 
         return jsonify({
-            "message": "Successfully retrieved tags",
             "tags": response.data
         }), 200
 

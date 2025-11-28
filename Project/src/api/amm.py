@@ -5,7 +5,7 @@ from typing import Dict, Tuple
 from supabase import create_client, Client
 
 SUPABASE_URL = os.environ["SUPABASE_URL"]
-SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "dummy_key")  # or anon key in dev
+SUPABASE_KEY = os.environ.get("SUPABASE_SECRET_KEY", "dummy_key")  # or anon key in dev
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Base liquidity parameter for LS-LMSR
@@ -31,7 +31,7 @@ def _aggregate_positions(poll_id: int, client: Client | None = None) -> Dict[str
     if not trades_query.data:
         # No trades placed yet
         return {"YES": 0, "NO": 0}
-    
+
     return {"YES": trades_query.data[0]["yes_votes"], "NO": trades_query.data[0]["no_votes"]}
 
 

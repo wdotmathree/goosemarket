@@ -37,18 +37,20 @@ def buy_shares():
         market_state = _aggregate_positions(poll_id, client=supabase)
         quote = _quote_move(market_state, num_shares, outcome_yes, direction="buy")
 
-        if user_balance + 1e-9 < quote["cash_change"]:
+        if user_balance + 1e-9 < 100*quote["cash_change"]:
             return jsonify({"error": "Insufficient balance"}), 400
 
-        new_balance = round(user_balance - quote["cash_change"])
+        new_balance = round(user_balance - 100*quote["cash_change"])
         _persist_balance(supabase, user_id, new_balance)
+        # store total trade cost in cents
+        total_cost_cents = int(round(quote["cash_change"] * 100))
         _record_trade(
             supabase,
             poll_id,
             user_id,
             outcome_yes,
             num_shares,
-            share_price=-quote["cash_change"],
+            share_price=total_cost_cents,
         )
 
         return (
@@ -105,15 +107,17 @@ def sell_shares():
         market_state = _aggregate_positions(poll_id, client=supabase)
         quote = _quote_move(market_state, num_shares, outcome_yes, direction="sell")
 
-        new_balance = round(user_balance + quote["cash_change"])
+        new_balance = round(user_balance + 100*quote["cash_change"]) # DB stores balance in cents
         _persist_balance(supabase, user_id, new_balance)
+        # store total payout in cents (positive) and record sold shares as negative
+        total_payout_cents = int(round(quote["cash_change"] * 100))
         _record_trade(
             supabase,
             poll_id,
             user_id,
             outcome_yes,
             num_shares=-num_shares,
-            share_price=quote["cash_change"],
+            share_price=total_payout_cents,
         )
 
         return (
@@ -270,6 +274,12 @@ def _record_trade(
     num_shares,
     share_price,
 ):
+    # ensure share_price is stored as integer cents
+    try:
+        share_price_cents = int(round(float(share_price)))
+    except (TypeError, ValueError):
+        share_price_cents = 0
+
     (
         supabase.table("trades")
         .insert(
@@ -278,8 +288,53 @@ def _record_trade(
                 "user_id": user_id,
                 "outcome": outcome_yes,
                 "num_shares": num_shares,
-                "share_price": share_price,
+                "share_price": share_price_cents,
             }
         )
         .execute()
     )
+
+def estimate_cost(poll_id):
+    """Give a poll and a number of shares to buy or sell, estimate how much it'll cost
+    Expected JSON:
+    {
+        "num_shares": <int>,
+        "outcome_yes": True/False,
+        "buy": True/False
+    }
+    
+    Returns:
+    {
+        "estimate": <int>
+    }"""
+    try:
+        data = request.get_json()
+
+        if not data:
+            return jsonify({"error": "Request body is required"}), 400
+        
+        try:
+            poll_id = int(poll_id)
+            num_shares = int(data.get("num_shares"))
+            outcome_yes = data.get("outcome_yes")
+            outcome_yes = _normalize_outcome(outcome_yes)
+            buy = data.get("buy")
+            buy = _normalize_outcome(buy)
+        except (TypeError, ValueError):
+            raise ValueError("poll_id and num_shares must be integers")
+        
+        supabase = get_supabase()
+        if not supabase:
+            return jsonify({"error": "Database connection not available"}), 503
+        
+        market_state = _aggregate_positions(poll_id, client=supabase)
+        if buy:
+            quote = _quote_move(market_state, num_shares, outcome_yes, direction="buy")
+        else:
+            quote = _quote_move(market_state, num_shares, outcome_yes, direction="sell")
+        
+        return jsonify({"estimate": float(quote["cash_change"])}), 200
+        
+    except Exception as exc:
+        return jsonify({"error": f"Server error: {str(exc)}"}), 500
+

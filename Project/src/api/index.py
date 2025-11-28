@@ -11,16 +11,16 @@ from database import get_supabase
 from api.auth import login, register, verify_email, verify_token
 
 # Import poll functions
-from api.polls import create_poll, get_poll, edit_poll, list_polls
+from api.polls import create_poll, get_poll, edit_poll, list_polls, get_poll_stats
 from api.positions import get_positions_endpoint
 from api.userinfo import get_data
 
 # Import price functions
 from api.prices import get_price
-from api.trade import buy_shares, sell_shares
+from api.trade import buy_shares, sell_shares, estimate_cost
 
 # Import tag functions
-from api.tags import add_tag_to_poll, create_tag, get_all_tags, get_tag_by_id
+from api.tags import add_tag_to_poll, get_all_tags, get_tag_by_id
 
 # Import admin functions
 from api.admin import get_unapproved_polls, approve_poll, update_poll, reject_poll
@@ -102,6 +102,17 @@ def get_price_route(poll_id):
     """Get current market price for a poll."""
     return get_price(poll_id)
 
+@app.route("/api/polls/<poll_id>/estimate", methods=["POST"])
+@protected
+def get_price_estimate_route(poll_id):
+    """Get quote for buying / selling"""
+    return estimate_cost(poll_id)
+
+@app.route("/api/polls/<poll_id>/stats", methods=["GET"])
+@protected
+def get_poll_stats_route(poll_id):
+    return get_poll_stats(poll_id)
+
 @app.route("/api/trades/buy", methods=["POST"])
 @protected
 def buy_shares_route():
@@ -119,7 +130,7 @@ def sell_shares_route():
 def add_tag_route():
     return add_tag_to_poll()
 
-@app.route("/api/tags/all", methods=["POST"])
+@app.route("/api/tags/all", methods=["GET"])
 @protected
 def get_all_tags_route():
     return get_all_tags()
@@ -129,7 +140,7 @@ def get_all_tags_route():
 def get_tag_by_id_route():
     return get_tag_by_id()
 
-@app.route("/api/positions", methods=["GET"])
+@app.route("/api/positions", methods=["POST"])
 @protected
 def get_positions_route():
     """Retrieve user positions."""

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,10 +13,34 @@ import { useAuth } from "@/context/AuthContext";
 export default function EventDetail() {
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
-	const { username } = useAuth();
+	const { username, setBalance } = useAuth();
 	const [betAmount, setBetAmount] = useState("");
 	const [selectedSide, setSelectedSide] = useState(null);
 	const [error, setError] = useState(null);
+	const [isBuy, setIsBuy] = useState(true);
+	const [position, setPosition] = useState(null);
+	const { userId } = useAuth();
+
+	const [pollStats, setPollStats] = useState({ num_traders: 0, volume: 0, "24h_volume": 0 });
+
+	const urlParams = new URLSearchParams(window.location.search);
+	const eventId = urlParams.get("id"); // now defined first
+
+	const fetchPollStats = async () => {
+	if (!eventId) return;
+	try {
+		const res = await fetch(`/api/polls/${eventId}/stats`);
+		if (!res.ok) throw new Error("Failed to fetch poll stats");
+		const data = await res.json();
+		setPollStats(data);
+	} catch (err) {
+		console.error(err);
+	}
+	};
+
+	useEffect(() => {
+	fetchPollStats();
+	}, [eventId]);
 
 	// Get user_id from cookie
 	const getUserId = () => {
@@ -29,16 +53,14 @@ export default function EventDetail() {
 			return null;
 		}
 	};
-	const urlParams = new URLSearchParams(window.location.search);
-	const eventId = urlParams.get("id");
 
 	// Mutation for placing bet
 	const placeBetMutation = useMutation({
-		mutationFn: async ({ pollId, outcome, numShares }) => {
+		mutationFn: async ({ pollId, outcome, numShares, buy }) => {
 			const userId = getUserId();
 			if (!userId) throw new Error("User not logged in");
 
-			const res = await fetch("/api/trades/buy", {
+			const res = await fetch(buy ? "/api/trades/buy" : "/api/trades/sell", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
@@ -46,6 +68,7 @@ export default function EventDetail() {
 					user_id: userId,
 					outcome: outcome,
 					num_shares: numShares,
+					buy: buy,
 				}),
 			});
 
@@ -56,10 +79,17 @@ export default function EventDetail() {
 
 			return res.json();
 		},
-		onSuccess: () => {
+		onSuccess: (data, variables) => {
+			const { buy } = variables
+			if (buy){
+				setBalance(prev => prev - 100*data.cost)
+			} else{
+				setBalance(prev => prev + 100*data.payout)
+			}
 			// Refresh poll data to show updated prices
 			queryClient.invalidateQueries(["poll", eventId]);
 			// Reset form
+			fetchPollStats();
 			setBetAmount("");
 			setSelectedSide(null);
 			setError(null);
@@ -110,8 +140,55 @@ export default function EventDetail() {
 			pollId: parseInt(eventId),
 			outcome: selectedSide.toUpperCase(),
 			numShares: parseInt(betAmount),
+			buy: isBuy,
 		});
 	};
+
+	const estimateQuery = useQuery({
+		queryKey: ["estimate", eventId, selectedSide, betAmount],
+		queryFn: async () => {
+			if (!selectedSide || !betAmount || parseInt(betAmount) <= 0) return 0;
+
+			const res = await fetch(`/api/polls/${eventId}/estimate`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					outcome_yes: selectedSide === "yes",
+					num_shares: parseInt(betAmount),
+					buy: isBuy
+				}),
+			});
+
+			if (!res.ok) throw new Error("Failed to estimate cost");
+
+			const data = await res.json();
+			return data.estimate;
+		},
+		enabled: !!eventId && !!selectedSide && !!betAmount,
+	});
+
+	useEffect(() => {
+		const fetchPosition = async () => {
+			if (!eventId || !userId) return;
+			try {
+			const res = await fetch("/api/positions", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					user_id: userId,
+					poll_id: parseInt(eventId)
+				}),
+			});
+			if (!res.ok) throw new Error("Failed to fetch position");
+			const data = await res.json();
+			setPosition(data.positions[0] || null);
+			} catch (err) {
+			console.error(err);
+			}
+		};
+		fetchPosition();
+	}, [eventId, userId]);
+
 	if (isLoading) {
 		return (
 			<div className="min-h-screen bg-slate-950 flex items-center justify-center">
@@ -162,21 +239,14 @@ export default function EventDetail() {
 						<Card className="border-slate-800 bg-slate-900/50">
 							<CardHeader>
 								<div className="flex items-start justify-between mb-4">
-									{event.has_ended ? (
-										<Badge
-											variant="outline"
-											className="bg-slate-500/10 text-slate-400 border-slate-500/20 border"
-										>
-											Closed
-										</Badge>
-									) : (
+									{!event.has_ended ? (
 										<Badge
 											variant="outline"
 											className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 border"
 										>
 											Open
 										</Badge>
-									)}
+									) : null}
 									{event.ends_at && (
 										<div className="flex items-center gap-2 text-slate-400">
 											<Clock className="w-4 h-4" />
@@ -186,6 +256,14 @@ export default function EventDetail() {
 											</span>
 										</div>
 									)}
+								</div>
+								<div className="flex flex-wrap gap-2 mt-2">
+								  {event.has_ended && <Badge variant="outline" className="bg-slate-500/10 text-slate-400 border-slate-500/20 border">Closed</Badge>}
+								  {event.tags?.filter(tag => tag !== "Closed").map((tag) => (
+								    <Badge key={tag} variant="outline" className="bg-slate-500/10 text-slate-400 border-slate-500/20 border">
+								      {tag}
+								    </Badge>
+								  ))}
 								</div>
 								<CardTitle className="text-3xl font-bold text-white leading-tight">{event.title}</CardTitle>
 							</CardHeader>
@@ -198,7 +276,33 @@ export default function EventDetail() {
 
 						{/* Betting Interface */}
 						<Card className="border-slate-800 bg-slate-900/50">
-							<CardHeader>
+							<div className="flex mb-4">
+								<button
+									onClick={() => {
+										setIsBuy(true);
+										setBetAmount("");
+									}}
+									className={`flex-1 text-center py-2 text-white ${
+										isBuy ? "border-b-2 border-white" : "opacity-60"
+									}`}
+									disabled={event.has_ended}
+								>
+									Buy
+								</button>
+								<button
+									onClick={() => {
+										setIsBuy(false);
+										setBetAmount("");
+									}}
+									className={`flex-1 text-center py-2 text-white ${
+										!isBuy ? "border-b-2 border-white" : "opacity-60"
+									}`}
+									disabled={event.has_ended}
+								>
+									Sell
+								</button>
+							</div>
+							<CardHeader className="pt-0">
 								<CardTitle className="text-white">Place Your Bet</CardTitle>
 							</CardHeader>
 							<CardContent className="space-y-4">
@@ -209,15 +313,13 @@ export default function EventDetail() {
 											selectedSide === "yes"
 												? "bg-emerald-500 hover:bg-emerald-600 text-white border-2 border-emerald-400"
 												: "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-										}`}
+										} ${event.has_ended ? "opacity-50 cursor-not-allowed hover:bg-none" : ""}`}
+										disabled={event.has_ended}
 									>
-										<div className="flex flex-col items-center">
-											<span>YES</span>
+										<div className="flex items-center gap-2">
+											<span>{isBuy ? "Buy Yes" : "Sell Yes"}</span>
 											<span className="text-2xl">
-												{event.total_votes > 0
-													? Math.round((event.yes_votes / event.total_votes) * 100)
-													: 50}
-												%
+												{event.total_votes > 0 ? Math.round((event.yes_votes / event.total_votes) * 100) : 50}%
 											</span>
 										</div>
 									</Button>
@@ -227,15 +329,13 @@ export default function EventDetail() {
 											selectedSide === "no"
 												? "bg-red-500 hover:bg-red-600 text-white border-2 border-red-400"
 												: "bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30"
-										}`}
+										} ${event.has_ended ? "opacity-50 cursor-not-allowed hover:bg-none" : ""}`}
+										disabled={event.has_ended}
 									>
-										<div className="flex flex-col items-center">
-											<span>NO</span>
+										<div className="flex items-center gap-2">
+											<span>{isBuy ? "Buy No" : "Sell No"}</span>
 											<span className="text-2xl">
-												{event.total_votes > 0
-													? Math.round((event.no_votes / event.total_votes) * 100)
-													: 50}
-												%
+												{event.total_votes > 0 ? Math.round((event.no_votes / event.total_votes) * 100) : 50}%
 											</span>
 										</div>
 									</Button>
@@ -260,21 +360,20 @@ export default function EventDetail() {
 										</div>
 										<div className="flex items-center justify-between text-sm">
 											<span className="text-slate-400">Estimated Cost:</span>
-											<span className="text-emerald-400 font-semibold">
-												{betAmount && event.total_votes > 0
-													? `~${Math.round(
-															parseFloat(betAmount) *
-																(selectedSide === "yes" ? event.price_yes : event.price_no)
-													  )} G$`
-													: "0 G$"}
+											<span className={`${isBuy ? "text-red-400" : "text-emerald-400"} font-semibold`}>
+												{estimateQuery.isFetching
+													? "..."
+													: estimateQuery.data
+														? `~${Number(estimateQuery.data).toFixed(2)} G$`
+														: "0 G$"}
 											</span>
 										</div>
 										<Button
 											onClick={handlePlaceBet}
 											className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-semibold"
-											disabled={!betAmount || parseFloat(betAmount) <= 0 || placeBetMutation.isPending}
+											disabled={!betAmount || parseFloat(betAmount) <= 0 || placeBetMutation.isPending || event.has_ended}
 										>
-											{placeBetMutation.isPending ? "Placing Bet..." : "Place Bet"}
+											{placeBetMutation.isPending ? (isBuy ? "Placing Buy..." : "Placing Sell...") : (isBuy ? "Place Buy" : "Place Sell")}
 										</Button>
 									</div>
 								)}
@@ -334,41 +433,64 @@ export default function EventDetail() {
 										<DollarSign className="w-4 h-4" />
 										<span className="text-sm">Total Pool</span>
 									</div>
-									<span className="text-white font-semibold">
-										{event.total_votes?.toLocaleString() || 0} G$
-									</span>
+									<span className="text-white font-semibold">{(pollStats.volume/100).toFixed(2).toLocaleString()} G$</span>
 								</div>
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-2 text-slate-400">
 										<Users className="w-4 h-4" />
 										<span className="text-sm">Traders</span>
 									</div>
-									<span className="text-white font-semibold">{Math.floor(Math.random() * 500 + 100)}</span>
+									<span className="text-white font-semibold">{pollStats.num_traders.toLocaleString()}</span>
 								</div>
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-2 text-slate-400">
 										<TrendingUp className="w-4 h-4" />
 										<span className="text-sm">24h Volume</span>
 									</div>
-									<span className="text-white font-semibold">
-										{Math.floor(Math.random() * 5000 + 1000).toLocaleString()} G$
-									</span>
+									<span className="text-white font-semibold">{(pollStats["24h_volume"]/100).toFixed(2).toLocaleString()} G$</span>
 								</div>
 							</CardContent>
 						</Card>
 
-						{/* Your Position (Mock) */}
-						<Card className="border-slate-800 bg-slate-900/50">
-							<CardHeader>
-								<CardTitle className="text-white">Your Position</CardTitle>
-							</CardHeader>
-							<CardContent>
-								<div className="text-center py-8">
-									<p className="text-slate-400 text-sm mb-2">No active bets</p>
-									<p className="text-slate-500 text-xs">Place a bet to see your position</p>
-								</div>
-							</CardContent>
-						</Card>
+					{/* Your Position */}
+					<Card className="border-slate-800 bg-slate-900/50">
+					  <CardHeader>
+					    <CardTitle className="text-white">Your Position</CardTitle>
+					  </CardHeader>
+					  <CardContent>
+					    {position ? (
+					      <div className="space-y-2">
+					        <div className="flex justify-between text-sm text-slate-400">
+					          <span>Side:</span>
+					          <span className="text-white font-semibold">{position.side}</span>
+					        </div>
+					        <div className="flex justify-between text-sm text-slate-400">
+					          <span>Quantity:</span>
+					          <span className="text-white font-semibold">{position.quantity}</span>
+					        </div>
+					        <div className="flex justify-between text-sm text-slate-400">
+					          <span>Price Purchased:</span>
+					          <span className="text-white font-semibold">{position.avg_price.toFixed(2)} G$</span>
+					        </div>
+					        <div className="flex justify-between text-sm text-slate-400">
+					          <span>Current Price:</span>
+					          <span className="text-white font-semibold">{(position.current_price/100).toFixed(2)} G$</span>
+					        </div>
+					        <div className="flex justify-between text-sm text-slate-400">
+					          <span>PnL:</span>
+					          <span className={`font-semibold ${position.current_pnl >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+					            {position.current_pnl.toFixed(2)} G$
+					          </span>
+					        </div>
+					      </div>
+					    ) : (
+					      <div className="text-center py-8">
+					        <p className="text-slate-400 text-sm mb-2">No active bets</p>
+					        <p className="text-slate-500 text-xs">Place a bet to see your position</p>
+					      </div>
+					    )}
+					  </CardContent>
+					</Card>
 					</div>
 				</div>
 			</div>

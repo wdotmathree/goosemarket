@@ -10,7 +10,7 @@ from datetime import datetime, timedelta, timezone
 
 from database import get_supabase
 
-DAILY_LOGIN_BONUS = 10  # Points awarded for first daily login (increases linearly with streaks)
+DAILY_LOGIN_BONUS = 500  # Points awarded for first daily login (increases linearly with streaks)
 
 load_dotenv()
 jwks = jwt.PyJWKClient(os.getenv("SUPABASE_URL") + "/auth/v1/.well-known/jwks.json")
