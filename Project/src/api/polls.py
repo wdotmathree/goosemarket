@@ -260,6 +260,16 @@ def list_polls():
             else:
                 poll["has_ended"] = False
 
+        # Fetch and attach tags for each poll
+        for poll in polls:
+            tags_result = supabase.table("poll_tags").select("tags(name)").eq("poll_id", poll["id"]).execute()
+            tag_names = []
+            if tags_result.data:
+                for tag_wrapper in tags_result.data:
+                    if tag_wrapper.get("tags") and tag_wrapper["tags"].get("name"):
+                        tag_names.append(tag_wrapper["tags"]["name"])
+            poll["tags"] = tag_names
+
         # Apply status filter after fetching (since it's computed)
         status_filter = request.args.get('status')
         if status_filter:
@@ -294,12 +304,24 @@ def get_poll(poll_id):
         if not supabase:
             return jsonify({"error": "Database connection not available"}), 503
 
-        result = supabase.table("polls").select("*").eq("id", poll_id).execute()
+        result = supabase.table("polls").select(
+            "*, poll_tags(tags(name))"
+        ).eq("id", poll_id).execute()
 
         if not result.data:
             return jsonify({"error": "Poll not found"}), 404
 
-        poll = result.data[0]
+        poll_raw = result.data[0]
+
+        # Flatten the tags
+        tag_names = [
+            tag_wrapper["tags"]["name"]
+            for tag_wrapper in poll_raw.get("poll_tags", [])
+            if tag_wrapper.get("tags") and tag_wrapper["tags"].get("name")
+        ]
+
+        poll = {k: v for k, v in poll_raw.items() if k != "poll_tags"}
+        poll["tags"] = tag_names
 
         # Check if poll has ended (if ends_at is set)
         if poll.get("ends_at"):
@@ -458,3 +480,36 @@ def edit_poll(poll_id):
 
     except Exception as e:
         return jsonify({"error": f"Server error: {str(e)}"}), 500
+
+def get_poll_stats(poll_id):
+    """Calculates stats about a poll to be displayed on dashboard and poll's page 
+    Returns:
+    {
+        "num_traders": <int>,
+        "volume": <int>,
+        "24h_volume": <int>
+    }"""
+    try:
+        try:
+            poll_id = int(poll_id)
+        except (ValueError, TypeError):
+            return jsonify({"error": "Poll ID must be a valid integer"}), 400
+
+        supabase = get_supabase()
+        if not supabase:
+            return jsonify({"error": "Database connection not available"}), 503
+
+        result = supabase.rpc("get_poll_stats", {"p_poll_id": poll_id}).execute() # Calls a RPC function in supabase
+
+        if not result.data:
+            return jsonify({"error": "Could not connect to database"}), 500
+        
+        stats = result.data[0]  # contains num_traders, volume, 24h_volume
+        return jsonify({
+            "num_traders": stats["num_traders"] or 0,
+            "volume": stats["volume"] or 0,
+            "24h_volume": stats["24h_volume"] or 0
+        }), 200
+        
+    except Exception as e:
+        return jsonify({"error": f"Server error: {str(e)}"}), 500 

@@ -74,7 +74,7 @@ export default function Navbar() {
 								<p className="text-xs text-slate-400">Balance</p>
 								<p className="font-semibold text-emerald-400">
 									{balance !== undefined && balance !== null
-										? balance.toLocaleString() + " G$"
+										? (balance/100).toLocaleString() + " G$"
 										: "0 G$"}
 								</p>
 							</div>

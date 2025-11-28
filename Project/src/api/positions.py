@@ -46,9 +46,9 @@ def get_positions_endpoint():
         if not data:
             return jsonify({"error": "Request body is required"}), 400
 
-        user_id = data.get("user_id", "").strip()
-        poll_id = data.get("poll_id", "").strip()
-        status = data.get("status", "").strip().lower()
+        user_id = data.get("user_id", "")
+        poll_id = data.get("poll_id", "")
+        status = str(data.get("status", "")).strip().lower() if data.get("status") is not None else ""
 
         page_size = data.get("page_size", DEFAULT_PAGE_SIZE)
         page = data.get("page", 1)
@@ -105,7 +105,7 @@ def get_positions(user_id, poll_id=None, status=None, page_size=DEFAULT_PAGE_SIZ
         offset = (page - 1) * page_size
 
         # Verify user exists
-        user_result = supabase.table("users").select("id").eq("id", user_id).execute()
+        user_result = supabase.table("profiles").select("id").eq("id", user_id).execute()
         if not user_result.data:
             return jsonify({"error": "User does not exist"}), 404
 
@@ -124,7 +124,10 @@ def get_positions(user_id, poll_id=None, status=None, page_size=DEFAULT_PAGE_SIZ
                 return jsonify({"error": "Poll does not exist"}), 404
 
             # Check poll status
-            is_open = now_utc < poll_query.data[0]["ends_at"]
+            if not poll_query.data[0]["ends_at"]:
+                is_open = True # Poll does not have end date
+            else:
+                is_open = now_utc < poll_query.data[0]["ends_at"]
 
             # If we're looking at a specific poll, one of open/closed returns the poll, and the other returns nothing
             if (status == "open" and not is_open) or (status == "closed" and is_open):
@@ -157,53 +160,76 @@ def get_positions(user_id, poll_id=None, status=None, page_size=DEFAULT_PAGE_SIZ
         # Construct positions
         trades = result.data
 
-        positions_map = defaultdict(lambda: {"quantity": 0, "total_cost": 0.0, "open": True, "result": False})
+        positions_map = defaultdict(lambda: {"quantity": 0, "cost_basis_cents": 0, "open": True, "result": None})
 
         for trade in trades:
             key = (trade["poll_id"], trade["outcome"])
-            quantity = trade["num_shares"]
-            share_price = trade["share_price"]
+            quantity = int(trade["num_shares"])  # signed; buys positive, sells negative
+            share_price = trade.get("share_price", 0)  # stored as integer cents total for the trade
 
             poll = get_poll_data(trade["poll_id"])
             if not poll:
                 # Could not retrieve poll data, skip this trade
                 continue
 
+            # Aggregate quantity
             positions_map[key]["quantity"] += quantity
-            positions_map[key]["total_cost"] += quantity * share_price
 
-            positions_map[key]["result"] = poll["outcome"] if poll["has_ended"] else None
+            # cost_basis_cents: buys add cost, sells subtract payout
+            try:
+                sp = int(share_price)
+            except (TypeError, ValueError):
+                sp = 0
+
+            if quantity > 0:
+                positions_map[key]["cost_basis_cents"] += sp
+            else:
+                # quantity < 0 => sold shares, subtract their cost basis
+                positions_map[key]["cost_basis_cents"] -= sp
+
+            positions_map[key]["result"] = poll["outcome"] if poll.get("has_ended") else None
 
         combined_positions = []
 
         for (poll_id, side), data in positions_map.items():
             quantity = data["quantity"]
-            avg_price = data["total_cost"] / quantity if quantity != 0 else 0.0
+            cost_basis_cents = data.get("cost_basis_cents", 0)
 
-            position_quote = quote_and_cost_ls_lmsr(poll_id, side, -1*quantity, B0)
+            # skip zero-quantity positions
+            if quantity == 0:
+                continue
 
-            current_price = position_quote["price_yes"] if side else position_quote["price_no"]
+            # average price per share in dollars (positive)
+            avg_price_dollars = (abs(cost_basis_cents) / abs(quantity) / 100.0) if quantity != 0 else 0.0
 
-            if data["result"]:
-                # Poll has ended, calculate pnl based on result
+            # Quote the market for closing the position now: selling `quantity` shares
+            # We pass -quantity to represent selling the current position
+            position_quote = quote_and_cost_ls_lmsr(poll_id, side, -1 * quantity, B0)
+
+            # cost returned by quote function is in dollars (cash change for the operation)
+            # value_now_dollars is what you'd receive (positive) from selling the current quantity
+            value_now_dollars = float(-1 * position_quote.get("cost", 0.0))
+            value_now_cents = int(round(value_now_dollars * 100))
+
+            if data.get("result") is not None:
+                # Poll has ended: determine final value based on resolution
                 if side == data["result"]:
-                    # Won bet
-                    current_pnl = (100 - avg_price) * quantity
+                    value_now_cents = int(quantity * 100)
                 else:
-                    # Lost bet
-                    current_pnl = -1 * (avg_price * quantity)
-            else:
-                # Amount the user could get by selling all shares now minus the cost they paid
-                current_pnl = -1 * position_quote["cost"] - (avg_price * quantity)
+                    # Losing side: pays $0
+                    value_now_cents = 0
+
+            # PnL in cents = current value - cost basis
+            pnl_cents = value_now_cents - cost_basis_cents
 
             combined_positions.append({
                 "poll_id": poll_id,
                 "side": side,
                 "quantity": quantity,
-                "avg_price": avg_price,
-                "current_price": current_price,
-                "current_pnl": current_pnl,
-                "open": data["open"]
+                "avg_price": round(avg_price_dollars, 2),
+                "current_price": position_quote.get("price_yes") if side else position_quote.get("price_no"),
+                "current_pnl": round(pnl_cents / 100.0, 2),
+                "open": data.get("open", True),
             })
 
         return jsonify({"positions": combined_positions}), 200
