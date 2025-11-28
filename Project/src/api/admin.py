@@ -23,7 +23,7 @@ def get_unapproved_polls() -> List[Dict[str, Any]]:
     }
     """
     if not current_user_is_admin():
-        return jsonify({"error": "User does not have permission to access admin functions"}), 400
+        return jsonify({"error": "User does not have permission to access admin functions"}), 403
     
     try:
         supabase = get_supabase()
@@ -31,42 +31,36 @@ def get_unapproved_polls() -> List[Dict[str, Any]]:
         if not supabase:
             return jsonify({"error": "Database connection not available"}), 503
 
-        result = (
+        response = (
             supabase
             .table("polls")
-            .select("id, title, description, created_at, ends_at, creator")
+            .select("id, title, description, created_at, ends_at, creator, poll_tags(tags(name))")
             .eq("public", False)
             .eq("deleted", False)
             .order("created_at", desc=False)
             .execute()
         )
-        polls = result.data
+        polls = response.data
 
         if not polls:
-            # No unapproved polls
             return jsonify({"polls": []}), 200
 
-        poll_ids = [p["id"] for p in polls]
-        poll_tags = (supabase.table("poll_tags").select("poll_id", "tag_id").in_("poll_id", poll_ids).execute()).data
-
-        # Get all tag <-> tag id pairs
-        tag_ids = list({row["tag_id"] for row in poll_tags})
-        tag_rows = (supabase.table("tags").select("id", "name").in_("id", tag_ids).execute()).data
-        tag_lookup = {t["id"]: t["name"] for t in tag_rows}
-
-        poll_tags_map = {pid: [] for pid in poll_ids}
-        for row in poll_tags:
-            poll_id = row["poll_id"]
-            tag_id = row["tag_id"]
-            tag_name = tag_lookup.get(tag_id)
-            if tag_name:
-                #Add all tags to each poll
-                poll_tags_map[poll_id].append(tag_name)
-        
+        processed_polls = []
         for poll in polls:
-            poll["tags"] = poll_tags_map.get(poll["id"], [])
+            # Extract names from the deeply nested structure
+            tag_names = [
+                tag_wrapper["tags"]["name"] 
+                for tag_wrapper in poll.get("poll_tags", []) 
+                if tag_wrapper.get("tags") and tag_wrapper["tags"].get("name")
+            ]
+            
+            processed_poll = {
+                k: v for k, v in poll.items() if k != "poll_tags"
+            }
+            processed_poll["tags"] = tag_names
+            processed_polls.append(processed_poll)
 
-        return jsonify({"polls": result.data}), 200
+        return jsonify({"polls": processed_polls}), 200
     
     except Exception as e:
         return jsonify({"error": f"Server error: {str(e)}"}), 500
@@ -82,7 +76,7 @@ def approve_poll():
     }
     """
     if not current_user_is_admin():
-        return jsonify({"error": "User does not have permission to access admin functions"}), 400
+        return jsonify({"error": "User does not have permission to access admin functions"}), 403
     
     try:
         data = request.get_json()
@@ -134,7 +128,7 @@ def update_poll() -> None:
     }
     """
     if not current_user_is_admin():
-        return jsonify({"error": "User does not have permission to access admin functions"}), 400
+        return jsonify({"error": "User does not have permission to access admin functions"}), 403
 
     try:
         data = request.get_json()
@@ -179,13 +173,8 @@ def update_poll() -> None:
 
         for tag_id in to_add:
             supabase.table("poll_tags").insert({"poll_id": poll_id, "tag_id": tag_id}).execute()
-
-        for tag_id in to_remove:
-            supabase.table("poll_tags")\
-                .delete()\
-                .eq("poll_id", poll_id)\
-                .eq("tag_id", tag_id)\
-                .execute()
+        
+        supabase.table("poll_tags").delete().eq("poll_id", poll_id).in_("tag_id", to_remove).execute()
 
         updates = {}
         if title is not None:
@@ -218,7 +207,7 @@ def update_poll() -> None:
 
 
 def reject_poll():
-    """Removes an unapproved poll from the database
+    """Marks poll as rejected, so will not be shown in admin panel or dashboard
     Expected JSON:
     {
         "poll_id": <id>
@@ -273,16 +262,14 @@ def current_user_is_admin():
         return False
     
     try:
-        claims = supabase.auth.get_user(token)
+        claims = supabase.auth.get_claims(token)
     except Exception:
-        return False
-    
-    if not claims or not claims.user:
-        return False
-    
-    userId = claims.user.id
+        raise Exception("Could not access session info")
 
-    profile = supabase.table("profiles").select("admin").eq("auth_id", userId).single().execute()
+    if not claims or not claims.get("claims").get("email"):
+        raise Exception("Could not retrieve user email")
+
+    profile = supabase.table("profiles").select("admin").eq("email", claims.get("claims").get("email")).single().execute()
     if profile.data and profile.data["admin"] is True:
         return True
     
