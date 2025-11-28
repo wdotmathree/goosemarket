@@ -72,9 +72,10 @@ def login():
 
 	# Get other info
 	try:
-		profile = supabase.table("profiles").select("id", "username", "admin").eq("auth_id", res.user.id).execute().data[0]
+		profile = supabase.table("profiles").select("id", "username", "balance", "admin").eq("auth_id", res.user.id).execute().data[0]
 		user_id = profile["id"]
 		username = profile["username"]
+		balance = profile["balance"]
 		admin = profile["admin"]
 	except Exception as e:
 		return jsonify({"error": "Failed to retrieve user profile: " + str(e)}), 500
@@ -90,7 +91,7 @@ def login():
 	res = make_response()
 	res.set_cookie("sb-access-token", token_data.access_token, expires=token_data.expires_at, httponly=True)
 	res.set_cookie("sb-refresh-token", token_data.refresh_token, httponly=True)
-	res.set_cookie("user-info", b64encode(dumps({"user_id": user_id, "username": username, "email": email, "admin": admin}).encode()).decode(), expires=token_data.expires_at)
+	res.set_cookie("user-info", b64encode(dumps({"user_id": user_id, "username": username, "email": email, "balance": balance, "admin": admin}).encode()).decode(), expires=token_data.expires_at)
 	return res, 200
 
 
@@ -230,7 +231,6 @@ def login_bonus(user_id: int):
 		last_bonus_date = last_bonus
 
 	if today - last_bonus_date == timedelta(days=1):
-		print("Giving a bonus!")
 		# Give bonus
 		login_streak += 1
 		bonus = DAILY_LOGIN_BONUS * login_streak

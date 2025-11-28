@@ -2,10 +2,9 @@ import pytest
 import sys
 import os
 from unittest.mock import MagicMock, patch
+from src.api.admin import get_unapproved_polls, approve_poll, update_poll
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src")))
-
-import database
 
 
 class FakeResponse:
@@ -32,7 +31,7 @@ def test_get_unapproved_polls_returns_data(mock_supabase):
         [{"id": 1, "title": "T", "public": False}]
     )
 
-    result = database.get_unapproved_polls()
+    result = get_unapproved_polls()
 
     mock_supabase.table.assert_called_once_with("polls")
     fake_query.eq.assert_called_once_with("public", False)
@@ -47,7 +46,7 @@ def test_approve_poll_success(mock_supabase):
     fake_query.eq.return_value = fake_query
     fake_query.execute.return_value = FakeResponse([{"id": 1, "public": True}])
 
-    database.approve_poll(1)
+    approve_poll(1)
 
     mock_supabase.table.assert_called_once_with("polls")
     fake_query.update.assert_called_once_with({"public": True})
@@ -63,7 +62,7 @@ def test_approve_poll_raises_if_missing(mock_supabase):
     fake_query.execute.return_value = FakeResponse([])
 
     with pytest.raises(ValueError):
-        database.approve_poll(999)
+        approve_poll(999)
 
 
 def test_update_poll_updates_only_given_fields(mock_supabase):
@@ -74,7 +73,7 @@ def test_update_poll_updates_only_given_fields(mock_supabase):
     fake_query.eq.return_value = fake_query
     fake_query.execute.return_value = FakeResponse([{"id": 1}])
 
-    database.update_poll(
+    update_poll(
         1,
         title="New title",
         description="New desc",
@@ -89,7 +88,7 @@ def test_update_poll_updates_only_given_fields(mock_supabase):
 
 def test_update_poll_raises_if_no_fields():
     with pytest.raises(ValueError):
-        database.update_poll(1)
+        update_poll(1)
 
 
 def test_update_poll_raises_if_missing_row(mock_supabase):
@@ -101,4 +100,4 @@ def test_update_poll_raises_if_missing_row(mock_supabase):
     fake_query.execute.return_value = FakeResponse([])
 
     with pytest.raises(ValueError):
-        database.update_poll(1, title="X")
+        update_poll(1, title="X")

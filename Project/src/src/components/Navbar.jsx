@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
 	const location = useLocation();
-	const { isAdmin } = useAuth();
+	const { isAdmin, username, balance } = useAuth();
 
 	const [profilePopup, setProfilePopup] = useState(false);
 	const profileRef = useRef(null);
@@ -72,7 +72,11 @@ export default function Navbar() {
 							<span className="text-yellow-400 text-lg">💰</span>
 							<div>
 								<p className="text-xs text-slate-400">Balance</p>
-								<p className="font-semibold text-emerald-400">1,250 G$</p>
+								<p className="font-semibold text-emerald-400">
+									{balance !== undefined && balance !== null
+										? balance.toLocaleString() + " G$"
+										: "0 G$"}
+								</p>
 							</div>
 						</div>
 
@@ -81,7 +85,7 @@ export default function Navbar() {
 								className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center font-bold cursor-pointer select-none"
 								onClick={() => setProfilePopup(!profilePopup)}
 							>
-								AC
+								{username?.slice(0, 2).toUpperCase() ?? " "}
 							</div>
 
 							{/* Profile Dropdown Menu */}

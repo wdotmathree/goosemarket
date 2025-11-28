@@ -8,6 +8,7 @@ export function AuthProvider({ children }) {
 	const [username, setUsername] = useState(null);
 	const [email, setEmail] = useState(null);
 	const [userId, setUserId] = useState(null);
+	const [balance, setBalance] = useState(null)
 	const [update, setUpdate] = useState(false);
 
 	useEffect(() => {
@@ -23,13 +24,14 @@ export function AuthProvider({ children }) {
 		setUsername(userInfo.username);
 		setEmail(userInfo.email);
 		setUserId(userInfo.user_id);
+		setBalance(userInfo.balance)
 
 		setUpdate(false);
 	}, [update]);
 
 	return (
 		<AuthContext.Provider
-			value={{ isAdmin, setIsAdmin, username, setUsername, email, setEmail, userId, setUserId, setUpdate }}
+			value={{ isAdmin, setIsAdmin, username, setUsername, email, setEmail, userId, setUserId, balance, setBalance, setUpdate }}
 		>
 			{children}
 		</AuthContext.Provider>
