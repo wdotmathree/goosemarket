@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,12 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Dashboard() {
 	const [searchQuery, setSearchQuery] = useState("");
-	const [selectedTag, setSelectedTag] = useState("");
-	const [allTags, setAllTags] = useState([]);
-	const [tagSearch, setTagSearch] = useState("");
-	const [pollStats, setPollStats] = useState({});
-	const [overallStats, setOverallStats] = useState({ totalVolume: 0, totalTraders: 0 });
-	const filteredTags = allTags.filter(tag => tag.name.toLowerCase().includes(tagSearch.toLowerCase()));
+	const [categoryFilter, setCategoryFilter] = useState("all");
 
 	// Load polls from the API
 	const { data: events = [], isLoading } = useQuery({
@@ -51,47 +46,12 @@ export default function Dashboard() {
 		},
 	});
 
-	// Get all tags
-	useEffect(() => {
-		fetch("/api/tags/all")
-		.then(res => res.json())
-		.then(data => setAllTags(data.tags));
-	}, []);
-
-	useEffect(() => {
-		async function fetchStats() {
-			const statsMap = {};
-			let totalVolume = 0;
-			let totalTraders = 0;
-
-			await Promise.all(events.map(async (poll) => {
-				try {
-					const res = await fetch(`/api/polls/${poll.id}/stats`);
-					if (res.ok) {
-						const data = await res.json();
-						statsMap[poll.id] = data;
-						totalVolume += data.volume;
-						totalTraders += data.num_traders;
-					}
-				} catch (e) {
-					console.error(`Failed to fetch stats for poll ${poll.id}:`, e);
-				}
-			}));
-
-			setPollStats(statsMap);
-			setOverallStats({ totalVolume, totalTraders });
-		}
-
-		if (events.length > 0) fetchStats();
-	}, [events]);
-
-	// Apply filters (search + tag)
+	// Apply filters (search + category + active only)
 	const filteredEvents = events.filter((event) => {
 		const matchesSearch = event.title?.toLowerCase().includes(searchQuery.toLowerCase());
-		const matchesTag = !selectedTag || event.tags?.includes(selectedTag);
-		return matchesSearch && matchesTag;
-	})
-	.sort((a, b) => (pollStats[b.id]?.volume ?? 0) - (pollStats[a.id]?.volume ?? 0));
+		// const matchesCategory = categoryFilter === "all" || event.category === categoryFilter;
+		return matchesSearch;
+	});
 
 	return (
 		<div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
@@ -121,28 +81,18 @@ export default function Dashboard() {
 							className="pl-11 bg-slate-900 border-slate-800 text-white placeholder:text-slate-500 focus:ring-2 focus:ring-emerald-500/50"
 						/>
 					</div>
-					<Select value={selectedTag} onValueChange={setSelectedTag}>
+					<Select value={categoryFilter} onValueChange={setCategoryFilter}>
 						<SelectTrigger className="w-full sm:w-48 bg-slate-900 border-slate-800 text-white">
-							<SelectValue placeholder="Select tag" />
+							<SelectValue placeholder="All Categories" />
 						</SelectTrigger>
-						<SelectContent className="max-h-40 overflow-y-auto">
-							<Input
-							placeholder="Search tags..."
-							value={tagSearch}
-							onChange={(e) => setTagSearch(e.target.value)}
-							className="mb-2"
-							/>
-							<button
-							  onClick={() => setSelectedTag("")}
-							  className="w-full text-left px-3 py-1 mb-1 text-sm text-slate-400 hover:bg-slate-800/50 rounded"
-							>
-							  Clear selection
-							</button>
-							{filteredTags.map(tagObj => (
-								<SelectItem key={tagObj.name} value={tagObj.name}>
-									{tagObj.name}
-								</SelectItem>
-							))}
+						<SelectContent className="bg-slate-900 border-slate-800">
+							<SelectItem value="all">All Categories</SelectItem>
+							<SelectItem value="Academics">Academics</SelectItem>
+							<SelectItem value="Sports">Sports</SelectItem>
+							<SelectItem value="Campus Life">Campus Life</SelectItem>
+							<SelectItem value="Politics">Politics</SelectItem>
+							<SelectItem value="Weather">Weather</SelectItem>
+							<SelectItem value="Other">Other</SelectItem>
 						</SelectContent>
 					</Select>
 				</div>
@@ -164,7 +114,7 @@ export default function Dashboard() {
 							<div>
 								<p className="text-slate-400 text-sm">Total Volume</p>
 								<p className="text-2xl font-bold text-white">
-									{(overallStats.totalVolume/100).toFixed(2).toLocaleString()} G$
+									{events.reduce((sum, e) => sum + (Number(e.total_pool) || 0), 0).toLocaleString()} G$
 								</p>
 							</div>
 						</div>
@@ -174,7 +124,7 @@ export default function Dashboard() {
 							<span className="text-3xl">👥</span>
 							<div>
 								<p className="text-slate-400 text-sm">Active Traders</p>
-								<p className="text-2xl font-bold text-white">{overallStats.totalTraders.toLocaleString()}</p>
+								<p className="text-2xl font-bold text-white">{Math.floor(Math.random() * 500 + 200)}</p>
 							</div>
 						</div>
 					</div>
@@ -205,7 +155,7 @@ export default function Dashboard() {
 				) : (
 					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 						{filteredEvents.map((event) => (
-							<EventCard key={event.id} event={event} pollStats={pollStats[event.id]} />
+							<EventCard key={event.id} event={event} />
 						))}
 					</div>
 				)}

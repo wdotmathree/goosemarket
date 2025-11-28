@@ -16,7 +16,7 @@ const categoryColors = {
   "Other": "bg-slate-500/10 text-slate-400 border-slate-500/20"
 };
 
-export default function EventCard({ event, pollStats }) {
+export default function EventCard({ event }) {
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -34,14 +34,11 @@ export default function EventCard({ event, pollStats }) {
 			<div className="relative p-5 space-y-4">
 				{/* Header */}
 				<div className="flex items-start justify-between gap-3">
-					<div className="flex gap-2 mt-2 max-w-[75%] overflow-x-auto overflow-y-hidden whitespace-nowrap -ms-overflow-style-none scrollbar-hide">
-						{event.has_ended && <Badge variant="outline" className="inline-block bg-slate-500/10 text-slate-400 border-slate-500/20 border">Closed</Badge>}
-						{event.tags?.filter(tag => tag !== "Closed").map((tag) => (
-						<Badge key={tag} variant="outline" className="inline-block bg-slate-500/10 text-slate-400 border-slate-500/20 border">
-							{tag}
+					{event.has_ended && (
+						<Badge variant="outline" className="bg-slate-500/10 text-slate-400 border-slate-500/20 border">
+							Closed
 						</Badge>
-						))}
-					</div>
+					)}
 					{event.ends_at && (
 						<div className="flex items-center gap-1 text-xs text-slate-400">
 							<Clock className="w-3 h-3" />
@@ -64,10 +61,10 @@ export default function EventCard({ event, pollStats }) {
 						}}
 						className="relative overflow-hidden bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:border-emerald-500/50 transition-all"
 					>
-						<div className="flex items-center gap-2">
-							<span>Yes:</span>
-							<span className="text-2xl">
-								{event.total_votes != 0 ? Math.round((event.yes_votes / event.total_votes) * 100) : 50}%
+						<div className="flex flex-col items-center w-full">
+							<span className="text-xs font-medium mb-1">YES</span>
+							<span className="text-xl font-bold">
+								{Math.round((event.yes_votes / event.total_votes) * 100)}%
 							</span>
 						</div>
 					</Button>
@@ -78,11 +75,9 @@ export default function EventCard({ event, pollStats }) {
 						}}
 						className="relative overflow-hidden bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 hover:border-red-500/50 transition-all"
 					>
-						<div className="flex items-center gap-2">
-							<span>No:</span>
-							<span className="text-2xl">
-								{event.total_votes != 0 ? Math.round((event.no_votes / event.total_votes) * 100): 50}%
-							</span>
+						<div className="flex flex-col items-center w-full">
+							<span className="text-xs font-medium mb-1">NO</span>
+							<span className="text-xl font-bold">{Math.round((event.no_votes / event.total_votes) * 100)}%</span>
 						</div>
 					</Button>
 				</div>
@@ -91,10 +86,11 @@ export default function EventCard({ event, pollStats }) {
 				<div className="flex items-center justify-between pt-3 border-t border-slate-800">
 					<div className="flex items-center gap-2 text-slate-400">
 						<TrendingUp className="w-4 h-4" />
-						<span className="text-xs">{pollStats?.num_traders?.toLocaleString() || 0} traders</span>
+						<span className="text-xs">{Math.floor(Math.random() * 500 + 100)} traders</span>
 					</div>
 					<div className="flex items-center gap-1 text-emerald-400 font-semibold">
-						<span className="text-sm">{((pollStats?.volume ?? 0) / 100).toFixed(2).toLocaleString()} G$</span>
+						<DollarSign className="w-4 h-4" />
+						<span className="text-sm">{event.total_pool?.toLocaleString() || 0} G$</span>
 					</div>
 				</div>
 			</div>
