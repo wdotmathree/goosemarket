@@ -1,17 +1,13 @@
 from flask import request, jsonify
 from database import get_supabase
 
-def get_leaderboard():
+def get_leaderboard(num_users):
     """Returns the top users by balance
-    Expected JSON:
-    {
-        "num_users": <int>
-    }
-    
     Returns:
     {
         "rank": <int>,
         "username": <username>,
+        "user_balance": <int>
         "top_users": [
             {
                 "username": <username>,
@@ -22,13 +18,6 @@ def get_leaderboard():
     """
     get_user_position = True
     try:
-        data = request.get_json()
-
-        if not data:
-            return jsonify({"error": "Request body is required"}), 400
-
-        num_users = data.get("num_users", 1)
-
         try:
             num_users = int(num_users)
         except (ValueError, TypeError):
@@ -37,13 +26,11 @@ def get_leaderboard():
         supabase = get_supabase()
         if not supabase:
             return jsonify({"error": "Database connection error"}), 503
-        claims = supabase.auth.get_user(request.cookies.get("sb-access-token"))
-        if not claims or not claims.user:
-            #Don't get logged in user's position
-            user_position = -1
-            username = " "
+        claims = supabase.auth.get_claims(request.cookies.get("sb-access-token"))
+        if not claims or not claims.get("claims").get("email"):
+           raise Exception("Could not access user session")
         else:
-            email = claims.user.email
+            email = claims.get("claims").get("email")
             profile = supabase.table("profiles").select("id", "username", "balance").eq("email", email).single().execute()
             user_id = profile.data["id"]
             username = profile.data["username"]
@@ -53,6 +40,7 @@ def get_leaderboard():
         response = supabase.table("profiles").select("username, balance").order("balance", desc=True).limit(num_users).execute()
         return jsonify({"rank": user_position, 
                         "username": username,
+                        "user_balance": balance,
                         "top_users": response.data}), 200
 
     
@@ -70,14 +58,14 @@ def get_pos(user_id: str, balance: str, supabase):
     return num_higher + 1
 
 def calculate_total_users():
-    """Called upon login to update number of users and store in a cookie"""
+    """Retruns the total number of users."""
 
     try:
         supabase = get_supabase()
         if not supabase:
             return jsonify({"error": "Database connection error"}), 503
         
-        users = supabase.table("profiles").select("*", count="exact").limit(1).execute()
+        users = supabase.table("profiles").select("id", count="exact", head=True).execute()
 		
         return jsonify({"users": users.count}), 200
 

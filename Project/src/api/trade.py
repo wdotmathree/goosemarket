@@ -40,7 +40,7 @@ def buy_shares():
         if user_balance + 1e-9 < quote["cash_change"]:
             return jsonify({"error": "Insufficient balance"}), 400
 
-        new_balance = round(user_balance - quote["cash_change"], 2)
+        new_balance = round(user_balance - quote["cash_change"])
         _persist_balance(supabase, user_id, new_balance)
         _record_trade(
             supabase,
@@ -48,8 +48,7 @@ def buy_shares():
             user_id,
             outcome_yes,
             num_shares,
-            cash_delta=-quote["cash_change"],
-            trade_type="BUY",
+            share_price=-quote["cash_change"],
         )
 
         return (
@@ -106,7 +105,7 @@ def sell_shares():
         market_state = _aggregate_positions(poll_id, client=supabase)
         quote = _quote_move(market_state, num_shares, outcome_yes, direction="sell")
 
-        new_balance = round(user_balance + quote["cash_change"], 2)
+        new_balance = round(user_balance + quote["cash_change"])
         _persist_balance(supabase, user_id, new_balance)
         _record_trade(
             supabase,
@@ -114,8 +113,7 @@ def sell_shares():
             user_id,
             outcome_yes,
             num_shares=-num_shares,
-            cash_delta=quote["cash_change"],
-            trade_type="SELL",
+            share_price=quote["cash_change"],
         )
 
         return (
@@ -191,7 +189,7 @@ def _poll_exists(supabase, poll_id):
 
 def _get_user_balance(supabase, user_id):
     resp = (
-        supabase.table("users")
+        supabase.table("profiles")
         .select("id, balance")
         .eq("id", user_id)
         .execute()
@@ -207,7 +205,7 @@ def _get_user_balance(supabase, user_id):
 
 def _persist_balance(supabase, user_id, new_balance):
     (
-        supabase.table("users")
+        supabase.table("profiles")
         .update({"balance": new_balance})
         .eq("id", user_id)
         .execute()
@@ -270,8 +268,7 @@ def _record_trade(
     user_id,
     outcome_yes,
     num_shares,
-    cash_delta,
-    trade_type,
+    share_price,
 ):
     (
         supabase.table("trades")
@@ -281,8 +278,7 @@ def _record_trade(
                 "user_id": user_id,
                 "outcome": outcome_yes,
                 "num_shares": num_shares,
-                "cash_delta": cash_delta,
-                "trade_type": trade_type,
+                "share_price": share_price,
             }
         )
         .execute()

@@ -203,7 +203,7 @@ def list_polls():
         offset = (page - 1) * page_size
 
         # Start building query
-        query = supabase.table("polls").select("*", count="exact")
+        query = supabase.table("polls").select("*, profiles!left(username), poll_tags!left(tag_id)", count="exact")
 
         # Apply public filter (default to public only)
         public_filter = request.args.get('public', 'true').lower()
@@ -229,7 +229,7 @@ def list_polls():
                 tag_id = int(tag)
                 # Use inner join to filter polls by tag
                 query = (supabase.table("polls")
-                        .select("polls.*, poll_tags!inner(tag_id)", count="exact")
+                        .select("polls.*, poll_tags!inner(tag_id), profiles!left(username)", count="exact")
                         .eq("poll_tags.tag_id", tag_id))
 
                 # Reapply public filter after join

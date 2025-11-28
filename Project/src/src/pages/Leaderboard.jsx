@@ -22,14 +22,14 @@ export default function Leaderboard() {
   const [userRank, setUserRank] = useState(null);
   const [userCount, setUserCount] = useState(null)
   const [username, setUsername] = useState(null)
+  const [userBalance, setUserBalance] = useState(0)
 
   useEffect(() => {
     async function fetchLeaderboard() {
       try {
-        const res = await fetch("/api/leaderboard", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ num_users: 10 })
+        const res = await fetch("/api/leaderboard?$num_users=10", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" }
         });
 
         const data = await res.json();
@@ -41,6 +41,9 @@ export default function Leaderboard() {
         }
         if(data.username){
           setUsername(data.username)
+        }
+        if(data.user_balance){
+          setUserBalance(data.user_balance)
         }
       } catch (err) {
         console.error("Failed to fetch leaderboard:", err);
@@ -144,19 +147,9 @@ export default function Leaderboard() {
 
                       {/* Stats */}
                       <div className="flex items-center gap-6">
-                        <Badge
-                          variant="outline"
-                          className={`${
-                            entry.balance > 0
-                              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                              : 'bg-red-500/10 text-red-400 border-red-500/30'
-                          }`}
-                        >
-                          {entry.change}
-                        </Badge>
                         <div className="text-right">
                           <p className="text-white font-bold text-lg">
-                            {entry.balance.toLocaleString()} G$
+                            {(entry.balance/100).toLocaleString()} G$
                           </p>
                           <p className="text-slate-400 text-xs">Balance</p>
                         </div>
@@ -184,7 +177,7 @@ export default function Leaderboard() {
               </div>
               <div className="text-right">
                 <p className="text-4xl font-bold text-white">{userRank ? "#" + userRank : "…"}</p>
-                <p className="text-slate-400 text-sm">1,250 G$</p>
+                <p className="text-slate-400 text-sm">{(userBalance/100).toLocaleString()} G$</p>
               </div>
             </div>
           </CardContent>

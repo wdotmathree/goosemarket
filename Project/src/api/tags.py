@@ -172,3 +172,17 @@ def get_tag_by_id():
 
     except Exception as e:
         return jsonify({"error": f"Server error: {str(e)}"}), 500
+
+def get_or_create_tag(name, supabase):
+    supabase = get_supabase()
+
+    # Check if exists
+    response = supabase.table("tags").select("id").eq("name", name).execute()
+
+    if response.data:
+        return response.data[0]["id"]
+
+    # Otherwise create
+    result = supabase.table("tags").insert({"name": name}).execute()
+
+    return result.data[0]["id"]

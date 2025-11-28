@@ -23,6 +23,9 @@ from api.trade import buy_shares, sell_shares
 
 from api.tags import add_tag_to_poll, create_tag, get_all_tags, get_tag_by_id
 
+# Import admin functions
+from api.admin import get_unapproved_polls, approve_poll, update_poll, reject_poll
+
 #Import leaderboard functions
 from api.leaderboard import get_leaderboard, calculate_total_users
 
@@ -142,11 +145,32 @@ def get_user_info_route():
     """Retrieve user information."""
     return get_data()
 
-@app.route("/api/leaderboard", methods=["POST"])
+@app.route("/api/admin/all", methods=["GET"])
+@protected
+def get_unapproved_polls_route():
+    "Retrieve all unapproved polls"
+    return get_unapproved_polls()
+
+@app.route("/api/admin/approve", methods=["POST"])
+@protected
+def approve_poll_route():
+    return approve_poll()
+
+@app.route("/api/admin/update", methods=["POST"])
+@protected
+def update_poll_route():
+    return update_poll()
+
+@app.route("/api/admin/reject", methods=["POST"])
+@protected
+def reject_poll_route():
+    return reject_poll()
+@app.route("/api/leaderboard", methods=["GET"])
 @protected
 def leaderboard_route():
     """Get leaderboard data for frontend."""
-    return get_leaderboard()
+    num_users = request.args.get('num_users', default=10)
+    return get_leaderboard(num_users)
 
 @app.route("/api/leaderboard/count", methods=["GET"])
 @protected

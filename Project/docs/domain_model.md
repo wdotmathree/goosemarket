@@ -3,9 +3,13 @@
 ### Entities
 - User
   - Email
+  - Username
   - Password
   - Balance
   - Streak
+  - Admin?
+  - Active?
+  - Last Bonus
 - Poll
   - Title
   - Description
@@ -13,10 +17,13 @@
   - Creation date
   - End date
   - Public?
+  - Outcome
 - Trade
   - User
   - Poll
-  - Amount
+  - Number of shares
+  - Share price
+  - Outcome
 - Tag
   - Name
 

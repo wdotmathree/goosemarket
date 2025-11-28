@@ -11,6 +11,7 @@ import Admin from "./pages/Admin.jsx";
 import Layout from "./components/Layout.jsx";
 import CreateEvent from "./pages/CreateEvent.jsx";
 import Leaderboard from "./pages/Leaderboard.jsx";
+import EventDetail from "./pages/EventDetail.jsx";
 
 import { AuthProvider } from "./context/AuthContext.jsx";
 
@@ -18,55 +19,63 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Public Pages (NO NAVBAR) */}
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
+	<React.StrictMode>
+		<QueryClientProvider client={queryClient}>
+			<AuthProvider>
+				<BrowserRouter>
+					<Routes>
+						{/* Public Pages (NO NAVBAR) */}
+						<Route path="/" element={<Home />} />
+						<Route path="/login" element={<Login />} />
 
-            {/* Protected Pages (WITH NAVBAR / Layout) */}
-            <Route
-              path="/dashboard"
-              element={
-                <Layout>
-                  <Dashboard />
-                </Layout>
-              }
-            />
+						{/* Protected Pages (WITH NAVBAR / Layout) */}
+						<Route
+							path="/dashboard"
+							element={
+								<Layout>
+									<Dashboard />
+								</Layout>
+							}
+						/>
 
-            <Route
-              path="/create"
-              element={
-                <Layout>
-                  <CreateEvent />
-                </Layout>
-              }
-            />
+						<Route
+							path="/create"
+							element={
+								<Layout>
+									<CreateEvent />
+								</Layout>
+							}
+						/>
 
-            <Route
-              path="/leaderboard"
-              element={
-                <Layout>
-                  <Leaderboard />
-                </Layout>
-              }
-            />
+						<Route
+							path="/leaderboard"
+							element={
+								<Layout>
+									<Leaderboard />
+								</Layout>
+							}
+						/>
 
-            <Route
-              path="/admin"
-              element={
-                <Layout>
-                  <Admin />
-                </Layout>
-              }
-            />
+						<Route
+							path="/admin"
+							element={
+								<Layout>
+									<Admin />
+								</Layout>
+							}
+						/>
 
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </QueryClientProvider>
-  </React.StrictMode>
+						<Route
+							path="EventDetail"
+							element={
+								<Layout>
+									<EventDetail />
+								</Layout>
+							}
+						/>
+					</Routes>
+				</BrowserRouter>
+			</AuthProvider>
+		</QueryClientProvider>
+	</React.StrictMode>
 );

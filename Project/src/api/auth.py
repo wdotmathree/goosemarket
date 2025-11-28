@@ -72,19 +72,26 @@ def login():
 
 	# Get other info
 	try:
-		username, admin = supabase.table("profiles").select("username", "admin").eq("auth_id", res.user.id).execute().data[0].values()
+		profile = supabase.table("profiles").select("id", "username", "balance", "admin").eq("auth_id", res.user.id).execute().data[0]
+		user_id = profile["id"]
+		username = profile["username"]
+		balance = profile["balance"]
+		admin = profile["admin"]
 	except Exception as e:
 		return jsonify({"error": "Failed to retrieve user profile: " + str(e)}), 500
-	
+
 	# Apply daily bonus to user if applicable
-	login_bonus(res.user.id)
+	try:
+		login_bonus(res.user.id)
+	except Exception as e:
+		return jsonify({"error": "Failed to apply login bonus: " + str(e)}), 500
 
 	# Send everything back
 	token_data = res.session
 	res = make_response()
 	res.set_cookie("sb-access-token", token_data.access_token, expires=token_data.expires_at, httponly=True)
 	res.set_cookie("sb-refresh-token", token_data.refresh_token, httponly=True)
-	res.set_cookie("user-info", b64encode(dumps({"username": username, "email": email, "admin": admin}).encode()).decode(), expires=token_data.expires_at)
+	res.set_cookie("user-info", b64encode(dumps({"user_id": user_id, "username": username, "email": email, "balance": balance, "admin": admin}).encode()).decode(), expires=token_data.expires_at)
 	return res, 200
 
 
@@ -192,13 +199,15 @@ def verify_email():
 			"username": username,
 			"active": True
 		}).eq("auth_id", user.id).execute()
+		profile = supabase.table("profiles").select("id").eq("auth_id", user.id).execute().data[0]
+		user_id = profile["id"]
 	except Exception as e:
 		return jsonify({"error": "Failed to create user profile: " + str(e)}), 500
 
 	res = make_response()
 	res.set_cookie("sb-access-token", token, expires=data.get("expires_at"), httponly=True)
 	res.set_cookie("sb-refresh-token", data.get("refresh_token"), httponly=True)
-	res.set_cookie("user-info", b64encode(dumps({"username": username, "email": email, "admin": admin}).encode()).decode(), expires=data.get("expires_at"))
+	res.set_cookie("user-info", b64encode(dumps({"user_id": user_id, "username": username, "email": email, "admin": admin}).encode()).decode(), expires=data.get("expires_at"))
 
 	return res, 200
 
@@ -206,49 +215,37 @@ def login_bonus(user_id: int):
 	"""
 	Internal function when logging in a user to reset most recent login date
 	and give bonus points based on the user's streak if applicable."""
-	print("Hi")
-	try:
-		supabase = get_supabase()
+	supabase = get_supabase()
 
-		profile_data = supabase.table("profiles").select("last_bonus", "current_streak", "balance").eq("auth_id", user_id).execute().data[0]
-		last_bonus = profile_data.get("last_bonus")
-		login_streak = profile_data.get("current_streak", 0)
-		balance = profile_data.get("balance", 0)
-		
-		print(f"Debug: last_bonus={last_bonus}, type={type(last_bonus)}")
-		
-		today = datetime.now(timezone.utc).date()
+	profile_data = supabase.table("profiles").select("last_bonus", "current_streak", "balance").eq("auth_id", user_id).execute().data[0]
+	last_bonus = profile_data.get("last_bonus")
+	login_streak = profile_data.get("current_streak", 0)
+	balance = profile_data.get("balance", 0)
 
-		# Convert last_bonus to date if it's a string
-		if isinstance(last_bonus, str):
-			last_bonus_date = datetime.fromisoformat(last_bonus).date()
-		else:
-			last_bonus_date = last_bonus
+	today = datetime.now(timezone.utc).date()
 
-		print(f"Debug: today={today}, last_bonus_date={last_bonus_date}, diff={today - last_bonus_date}")
+	# Convert last_bonus to date if it's a string
+	if isinstance(last_bonus, str):
+		last_bonus_date = datetime.fromisoformat(last_bonus).date()
+	else:
+		last_bonus_date = last_bonus
 
-		if today - last_bonus_date == timedelta(days=1):
-			print("Giving a bonus!")
-			# Give bonus
-			login_streak += 1
-			bonus = DAILY_LOGIN_BONUS * login_streak
-			new_balance = balance + bonus
-			supabase.table("profiles").update({
-				"last_bonus": today.isoformat(),
-				"current_streak": login_streak,
-				"balance": new_balance
-			}).eq("auth_id", user_id).execute()
+	if today - last_bonus_date == timedelta(days=1):
+		# Give bonus
+		login_streak += 1
+		bonus = DAILY_LOGIN_BONUS * login_streak
+		new_balance = balance + bonus
+		supabase.table("profiles").update({
+			"last_bonus": today.isoformat(),
+			"current_streak": login_streak,
+			"balance": new_balance
+		}).eq("auth_id", user_id).execute()
 
-		elif today - last_bonus_date > timedelta(days=1):
-			# Reset streak
-			new_balance = balance + DAILY_LOGIN_BONUS
-			supabase.table("profiles").update({
-				"last_bonus": today.isoformat(),
-				"current_streak": 1,
-				"balance": new_balance
-			}).eq("auth_id", user_id).execute()
-	
-	except Exception as e:
-		print(f"Login bonus error: {str(e)}")
-		import traceback
-		traceback.print_exc()
+	elif today - last_bonus_date > timedelta(days=1):
+		# Reset streak
+		new_balance = balance + DAILY_LOGIN_BONUS
+		supabase.table("profiles").update({
+			"last_bonus": today.isoformat(),
+			"current_streak": 1,
+			"balance": new_balance
+		}).eq("auth_id", user_id).execute()
