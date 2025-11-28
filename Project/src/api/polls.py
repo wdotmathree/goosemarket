@@ -103,7 +103,8 @@ def create_poll():
             return jsonify({"error": "Database connection not available"}), 503
 
         # Verify creator exists
-        user_result = supabase.table("users").select("id").eq("id", creator).execute()
+        # profiles table stores user ids per schema
+        user_result = supabase.table("profiles").select("id").eq("id", creator).execute()
         if not user_result.data:
             return jsonify({"error": "Creator user does not exist"}), 404
 
@@ -131,7 +132,8 @@ def create_poll():
             "title": title,
             "description": description,
             "public": public,
-            "creator": creator
+            "creator": creator,
+            "created_at": datetime.now(timezone.utc).isoformat()
         }
 
         if ends_at_dt:

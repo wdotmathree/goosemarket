@@ -104,7 +104,7 @@ def get_all_tags():
         if not supabase:
             return jsonify({"error": "Database connection not available"}), 503
 
-        response = supabase.table("tags").select("name").execute()
+        response = supabase.table("tags").select("id, name").execute()
 
         if getattr(response, "error", None):
             return jsonify({"error": "Failed to retrieve tags"}), 500
