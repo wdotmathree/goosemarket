@@ -227,7 +227,7 @@ def get_positions(user_id, poll_id=None, status=None, page_size=DEFAULT_PAGE_SIZ
 
             combined_positions.append({
                 "poll_id": poll_id,
-                "side": side,
+                "side": "Yes" if side else "No",
                 "quantity": quantity,
                 "avg_price": round(avg_price_dollars, 2),
                 "current_price": curr_price,

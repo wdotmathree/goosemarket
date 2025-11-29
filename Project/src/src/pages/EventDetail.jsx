@@ -18,7 +18,7 @@ export default function EventDetail() {
 	const [selectedSide, setSelectedSide] = useState(null);
 	const [error, setError] = useState(null);
 	const [isBuy, setIsBuy] = useState(true);
-	const [position, setPosition] = useState(null);
+	const [position, setPosition] = useState([]);
 	const { userId, isAdmin } = useAuth();
 
 	const [pollStats, setPollStats] = useState({ num_traders: 0, volume: 0, "24h_volume": 0 });
@@ -92,6 +92,7 @@ export default function EventDetail() {
 			queryClient.invalidateQueries(["poll", eventId]);
 			// Reset form
 			fetchPollStats();
+			fetchPosition();
 			setBetAmount("");
 			setSelectedSide(null);
 			setError(null);
@@ -170,9 +171,12 @@ export default function EventDetail() {
 	});
 
 	useEffect(() => {
-		const fetchPosition = async () => {
-			if (!eventId || !userId) return;
-			try {
+		fetchPosition();
+	}, [eventId, userId]);
+
+	const fetchPosition = async () => {
+		if (!eventId || !userId) return;
+		try {
 			const res = await fetch("/api/positions", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -183,13 +187,12 @@ export default function EventDetail() {
 			});
 			if (!res.ok) throw new Error("Failed to fetch position");
 			const data = await res.json();
-			setPosition(data.positions[0] || null);
-			} catch (err) {
+			// Expect data.positions to be an array
+			setPosition(Array.isArray(data.positions) ? data.positions : []);
+		} catch (err) {
 			console.error(err);
-			}
-		};
-		fetchPosition();
-	}, [eventId, userId]);
+		}
+	};
 
 	useEffect(() => {
 		const setSide = async () => {
@@ -464,31 +467,33 @@ export default function EventDetail() {
 					    <CardTitle className="text-white">Your Position</CardTitle>
 					  </CardHeader>
 					  <CardContent>
-					    {position ? (
-					      <div className="space-y-2">
-					        <div className="flex justify-between text-sm text-slate-400">
-					          <span>Side:</span>
-					          <span className="text-white font-semibold">{position.side}</span>
+					    {position && position.length > 0 ? (
+					      position.map((pos) => (
+					        <div key={pos.side} className="space-y-2 mb-4 p-2 border-b border-slate-700 last:border-b-0">
+					          <div className="flex justify-between text-sm text-slate-400">
+					            <span>Side:</span>
+					            <span className="text-white font-semibold">{pos.side}</span>
+					          </div>
+					          <div className="flex justify-between text-sm text-slate-400">
+					            <span>Quantity:</span>
+					            <span className="text-white font-semibold">{pos.quantity}</span>
+					          </div>
+					          <div className="flex justify-between text-sm text-slate-400">
+					            <span>Price Purchased:</span>
+					            <span className="text-white font-semibold">{pos.avg_price.toFixed(2)} G$</span>
+					          </div>
+					          <div className="flex justify-between text-sm text-slate-400">
+					            <span>Current Price:</span>
+					            <span className="text-white font-semibold">{(pos.current_price/100).toFixed(2)} G$</span>
+					          </div>
+					          <div className="flex justify-between text-sm text-slate-400">
+					            <span>PnL:</span>
+					            <span className={`font-semibold ${pos.current_pnl >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+					              {pos.current_pnl.toFixed(2)} G$
+					            </span>
+					          </div>
 					        </div>
-					        <div className="flex justify-between text-sm text-slate-400">
-					          <span>Quantity:</span>
-					          <span className="text-white font-semibold">{position.quantity}</span>
-					        </div>
-					        <div className="flex justify-between text-sm text-slate-400">
-					          <span>Price Purchased:</span>
-					          <span className="text-white font-semibold">{position.avg_price.toFixed(2)} G$</span>
-					        </div>
-					        <div className="flex justify-between text-sm text-slate-400">
-					          <span>Current Price:</span>
-					          <span className="text-white font-semibold">{(position.current_price/100).toFixed(2)} G$</span>
-					        </div>
-					        <div className="flex justify-between text-sm text-slate-400">
-					          <span>PnL:</span>
-					          <span className={`font-semibold ${position.current_pnl >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-					            {position.current_pnl.toFixed(2)} G$
-					          </span>
-					        </div>
-					      </div>
+					      ))
 					    ) : (
 					      <div className="text-center py-8">
 					        <p className="text-slate-400 text-sm mb-2">No active bets</p>
