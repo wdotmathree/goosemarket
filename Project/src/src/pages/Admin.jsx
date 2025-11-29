@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +8,7 @@ import { format } from "date-fns";
 
 export default function Admin() {
   const [pendingEvents, setPendingEvents] = useState([]);
+  const [resolveEvents, setResolveEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editingEvent, setEditingEvent] = useState(null);
   const [editValues, setEditValues] = useState({
@@ -15,28 +17,29 @@ export default function Admin() {
     tags: "",
     ends_at: ""
   });
+  const [viewMode, setViewMode] = useState("review");
+  const { incrementBalance } = useAuth();
 
   useEffect(() => {
-    async function fetchPending() {
+    async function fetchAll() {
       try {
-        const res = await fetch("/api/admin/all", {
-          method: "GET",
-          headers: { "Content-Type": "application/json" }
-        });
+        const [reviewRes, resolveRes] = await Promise.all([
+          fetch("/api/admin/review/all"),
+          fetch("/api/admin/resolve/all")
+        ]);
 
-        const data = await res.json();
+        const reviewData = await reviewRes.json();
+        const resolveData = await resolveRes.json();
 
-        if (data.polls) {
-          setPendingEvents(data.polls);
-        }
+        if (reviewData.polls) setPendingEvents(reviewData.polls);
+        if (resolveData.polls) setResolveEvents(resolveData.polls);
       } catch (err) {
-        console.error("Failed to fetch pending polls:", err);
+        console.error("Failed to fetch admin data:", err);
       } finally {
         setIsLoading(false);
       }
     }
-
-    fetchPending();
+    fetchAll();
   }, []);
 
   const handleApprove = async (eventId) => {
@@ -168,6 +171,28 @@ export default function Admin() {
           </Card>
         </div>
 
+        {/* Toggle Review vs Resolution */}
+        <div className="flex justify-center mb-6">
+          <div className="flex border-b border-slate-700 w-full max-w-md justify-around">
+            <button
+              onClick={() => setViewMode("review")}
+              className={`pb-2 px-4 text-white ${
+                viewMode === "review" ? "border-b-2 border-white" : "opacity-50"
+              }`}
+            >
+              Pending Review
+            </button>
+            <button
+              onClick={() => setViewMode("resolution")}
+              className={`pb-2 px-4 text-white ${
+                viewMode === "resolution" ? "border-b-2 border-white" : "opacity-50"
+              }`}
+            >
+              Pending Resolution
+            </button>
+          </div>
+        </div>
+
         {/* Pending Events */}
         <Card className="border-slate-800 bg-slate-900/50">
           <CardHeader>
@@ -179,7 +204,7 @@ export default function Admin() {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto" />
                 <p className="text-slate-400 mt-4">Loading submissions...</p>
               </div>
-            ) : pendingEvents.length === 0 ? (
+            ) : (viewMode === "review" ? pendingEvents : resolveEvents).length === 0 ? (
               <div className="text-center py-12">
                 <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-4">
                   <Check className="w-8 h-8 text-slate-600" />
@@ -189,7 +214,7 @@ export default function Admin() {
               </div>
             ) : (
               <div className="space-y-4">
-                {pendingEvents.map((event) => (
+                {(viewMode === "review" ? pendingEvents : resolveEvents).map((event) => (
                   <div
                     key={event.id}
                     className="p-6 rounded-lg border border-slate-800 bg-slate-900/50 hover:bg-slate-900 transition-all"
@@ -197,6 +222,9 @@ export default function Admin() {
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
+                          <Badge variant="outline" className="bg-yellow-500/10 text-yellow-400 border-yellow-500/20">
+                            Pending Review
+                          </Badge>
                           {event.tags && event.tags.map((tag, index) => (
                             <Badge
                               key={index}
@@ -206,9 +234,6 @@ export default function Admin() {
                               {tag}
                             </Badge>
                           ))}
-                          <Badge variant="outline" className="bg-yellow-500/10 text-yellow-400 border-yellow-500/20">
-                            Pending Review
-                          </Badge>
                         </div>
                         <h3 className="text-xl font-semibold text-white mb-2">
                           {event.title}
@@ -218,42 +243,102 @@ export default function Admin() {
                             {event.description}
                           </p>
                         )}
-                        <div className="flex items-center gap-4 text-sm text-slate-500">
-                          <span>
-                            Closes: {format(new Date(event.ends_at), "MMM d, yyyy 'at' h:mm a")}
-                          </span>
-                          <span>•</span>
-                          <span>
-                            Submitted: {format(new Date(event.created_at), "MMM d, yyyy")}
-                          </span>
-                        </div>
+                        {viewMode === "review" ? (
+                          <div className="flex items-center gap-4 text-sm text-slate-500">
+                            <span>
+                              Closes: {event.ends_at ? format(new Date(event.ends_at), "MMM d, yyyy 'at' h:mm a") : "No end date"}
+                            </span>
+                            <span>•</span>
+                            <span>
+                              Submitted: {format(new Date(event.created_at), "MMM d, yyyy")}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-4 text-sm text-slate-500">
+                            <span>Ended: {format(new Date(event.ended_at), "MMM d, yyyy 'at' h:mm a")}</span>
+                            <span>•</span>
+                            <span>Traders: {event.num_traders}</span>
+                            <span>•</span>
+                            <span>Volume: {(event.volume / 100).toFixed(2)} G$</span>
+                            <span>•</span>
+                            <span>YES: {event.odds_yes}% / NO: {event.odds_no}%</span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    <div className="flex gap-3">
-                      <Button
-                        onClick={() => handleApprove(event.id)}
-                        className="flex-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                      >
-                        <Check className="w-4 h-4 mr-2" />
-                        Approve
-                      </Button>
+                    {viewMode === "review" && (
+                      <div className="flex gap-3">
+                        <Button
+                          onClick={() => handleApprove(event.id)}
+                          className="flex-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                        >
+                          <Check className="w-4 h-4 mr-2" />
+                          Approve
+                        </Button>
 
-                      <Button
-                        onClick={() => handleReject(event.id)}
-                        className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/30"
-                      >
-                        <X className="w-4 h-4 mr-2" />
-                        Reject
-                      </Button>
+                        <Button
+                          onClick={() => handleReject(event.id)}
+                          className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/30"
+                        >
+                          <X className="w-4 h-4 mr-2" />
+                          Reject
+                        </Button>
 
-                      <Button
-                        onClick={() => openEdit(event)}
-                        className="flex-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30"
-                      >
-                        Edit
-                      </Button>
-                    </div>
+                        <Button
+                          onClick={() => openEdit(event)}
+                          className="flex-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                        >
+                          Edit
+                        </Button>
+                      </div>
+                    )}
+
+                    {viewMode === "resolution" && (
+                      <div className="flex gap-3">
+                        <Button
+                          onClick={() => {
+                            if (window.confirm("Set outcome to YES? This cannot be undone.")) {
+                              fetch("/api/admin/resolve", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ poll_id: event.id, outcome: true })
+                              })
+                                .then(async (res) => {
+                                  const data = await res.json();
+                                  if (data.user_profit) incrementBalance(data.user_profit);
+                                  setResolveEvents(prev => prev.filter(e => e.id !== event.id));
+                                })
+                                .catch(err => console.error("Failed to resolve poll:", err));
+                            }
+                          }}
+                          className="flex-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                        >
+                          Resolve YES
+                        </Button>
+
+                        <Button
+                          onClick={() => {
+                            if (window.confirm("Set outcome to NO? This cannot be undone.")) {
+                              fetch("/api/admin/resolve", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ poll_id: event.id, outcome: false })
+                              })
+                                .then(async (res) => {
+                                  const data = await res.json();
+                                  if (data.user_profit) incrementBalance(data.user_profit);
+                                  setResolveEvents(prev => prev.filter(e => e.id !== event.id));
+                                })
+                                .catch(err => console.error("Failed to resolve poll:", err));
+                            }
+                          }}
+                          className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30"
+                        >
+                          Resolve NO
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

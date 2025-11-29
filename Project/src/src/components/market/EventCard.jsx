@@ -67,7 +67,7 @@ export default function EventCard({ event, pollStats }) {
 						<div className="flex items-center gap-2">
 							<span>Yes:</span>
 							<span className="text-2xl">
-								{event.total_votes != 0 ? Math.round((event.yes_votes / event.total_votes) * 100) : 50}%
+								{event.price_yes != null ? Number(event.price_yes).toFixed(1) : "50.0"}%
 							</span>
 						</div>
 					</Button>
@@ -81,7 +81,7 @@ export default function EventCard({ event, pollStats }) {
 						<div className="flex items-center gap-2">
 							<span>No:</span>
 							<span className="text-2xl">
-								{event.total_votes != 0 ? Math.round((event.no_votes / event.total_votes) * 100): 50}%
+								{event.price_no != null ? Number(event.price_no).toFixed(1) : "50.0"}%
 							</span>
 						</div>
 					</Button>

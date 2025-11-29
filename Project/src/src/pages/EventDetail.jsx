@@ -19,7 +19,7 @@ export default function EventDetail() {
 	const [error, setError] = useState(null);
 	const [isBuy, setIsBuy] = useState(true);
 	const [position, setPosition] = useState(null);
-	const { userId } = useAuth();
+	const { userId, isAdmin } = useAuth();
 
 	const [pollStats, setPollStats] = useState({ num_traders: 0, volume: 0, "24h_volume": 0 });
 
@@ -41,6 +41,8 @@ export default function EventDetail() {
 	useEffect(() => {
 	fetchPollStats();
 	}, [eventId]);
+
+	// Preselect outcome button based on event.outcome
 
 	// Get user_id from cookie
 	const getUserId = () => {
@@ -189,6 +191,18 @@ export default function EventDetail() {
 		fetchPosition();
 	}, [eventId, userId]);
 
+	useEffect(() => {
+		const setSide = async () => {
+			if (!event) return;
+			try{
+				setSelectedSide(event.outcome === true ? "yes" : event.outcome === false ? "no" : null)
+			} catch (err) {
+			console.error(err);
+			}
+		};
+		setSide()
+	}, [event]);
+
 	if (isLoading) {
 		return (
 			<div className="min-h-screen bg-slate-950 flex items-center justify-center">
@@ -319,7 +333,7 @@ export default function EventDetail() {
 										<div className="flex items-center gap-2">
 											<span>{isBuy ? "Buy Yes" : "Sell Yes"}</span>
 											<span className="text-2xl">
-												{event.total_votes > 0 ? Math.round((event.yes_votes / event.total_votes) * 100) : 50}%
+												{event.price_yes != null ? Number(event.price_yes).toFixed(1) : "50.00"}%
 											</span>
 										</div>
 									</Button>
@@ -335,7 +349,7 @@ export default function EventDetail() {
 										<div className="flex items-center gap-2">
 											<span>{isBuy ? "Buy No" : "Sell No"}</span>
 											<span className="text-2xl">
-												{event.total_votes > 0 ? Math.round((event.no_votes / event.total_votes) * 100) : 50}%
+												{event.price_no != null ? Number(event.price_no).toFixed(1) : "50.00"}%
 											</span>
 										</div>
 									</Button>
@@ -390,16 +404,12 @@ export default function EventDetail() {
 									<div className="flex justify-between text-sm mb-2">
 										<span className="text-emerald-400 font-semibold">
 											YES{" "}
-											{event.total_votes > 0
-												? Math.round((event.yes_votes / event.total_votes) * 100)
-												: 50}
+											{event.price_yes != null ? Math.round(Number(event.price_yes)) : 50}
 											%
 										</span>
 										<span className="text-red-400 font-semibold">
 											NO{" "}
-											{event.total_votes > 0
-												? Math.round((event.no_votes / event.total_votes) * 100)
-												: 50}
+											{event.price_no != null ? Math.round(Number(event.price_no)) : 50}
 											%
 										</span>
 									</div>
@@ -407,11 +417,7 @@ export default function EventDetail() {
 										<div
 											className="absolute left-0 top-0 h-full bg-gradient-to-r from-emerald-500 to-emerald-600 transition-all duration-500"
 											style={{
-												width: `${
-													event.total_votes > 0
-														? Math.round((event.yes_votes / event.total_votes) * 100)
-														: 50
-												}%`,
+												width: `${event.price_yes != null ? Number(event.price_yes).toFixed(1) : 50}%`,
 											}}
 										/>
 									</div>
@@ -491,6 +497,31 @@ export default function EventDetail() {
 					    )}
 					  </CardContent>
 					</Card>
+					{isAdmin && !event.has_ended && (
+					  <Button
+					    className="w-full mt-4 bg-red-500 hover:bg-red-600 text-white font-semibold"
+					    onClick={async () => {
+					      try {
+					        const res = await fetch("/api/admin/update", {
+					          method: "POST",
+					          headers: { "Content-Type": "application/json" },
+					          body: JSON.stringify({
+					            poll_id: parseInt(eventId),
+					            ends_at: new Date().toISOString()
+					          }),
+					        });
+					        if (!res.ok) throw new Error("Failed to end poll");
+
+					        // Disable betting interface
+					        event.has_ended = true;
+					      } catch (err) {
+					        console.error(err);
+					      }
+					    }}
+					  >
+					    End Poll
+					  </Button>
+					)}
 					</div>
 				</div>
 			</div>

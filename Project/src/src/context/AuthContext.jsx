@@ -10,6 +10,7 @@ export function AuthProvider({ children }) {
 	const [userId, setUserId] = useState(null);
 	const [balance, setBalance] = useState(null)
 	const [update, setUpdate] = useState(false);
+	const incrementBalance = amount => setBalance(prev => prev + amount);
 
 	useEffect(() => {
 		// Load from cookie
@@ -31,7 +32,7 @@ export function AuthProvider({ children }) {
 
 	return (
 		<AuthContext.Provider
-			value={{ isAdmin, setIsAdmin, username, setUsername, email, setEmail, userId, setUserId, balance, setBalance, setUpdate }}
+			value={{ isAdmin, setIsAdmin, username, setUsername, email, setEmail, userId, setUserId, balance, setBalance, incrementBalance, setUpdate }}
 		>
 			{children}
 		</AuthContext.Provider>

@@ -13,6 +13,7 @@ export default function Dashboard() {
 	const [tagSearch, setTagSearch] = useState("");
 	const [pollStats, setPollStats] = useState({});
 	const [overallStats, setOverallStats] = useState({ totalVolume: 0, totalTraders: 0 });
+	const [pollStatusFilter, setPollStatusFilter] = useState("all");
 	const filteredTags = allTags.filter(tag => tag.name.toLowerCase().includes(tagSearch.toLowerCase()));
 
 	// Load polls from the API
@@ -31,9 +32,8 @@ export default function Dashboard() {
 							const priceData = await priceRes.json();
 							return {
 								...poll,
-								yes_votes: priceData.q_yes,
-								no_votes: priceData.q_no,
-								total_votes: priceData.q_yes + priceData.q_no,
+								price_yes: priceData.price_yes,
+								price_no: priceData.price_no
 							};
 						}
 					} catch (e) {
@@ -41,8 +41,8 @@ export default function Dashboard() {
 					}
 					return {
 						...poll,
-						yes_percentage: 50,
-						no_percentage: 50,
+						price_yes: 50,
+						price_no: 50,
 						total_pool: 100,
 					};
 				})
@@ -85,11 +85,15 @@ export default function Dashboard() {
 		if (events.length > 0) fetchStats();
 	}, [events]);
 
-	// Apply filters (search + tag)
+	// Apply filters (search + tag + status)
 	const filteredEvents = events.filter((event) => {
 		const matchesSearch = event.title?.toLowerCase().includes(searchQuery.toLowerCase());
 		const matchesTag = !selectedTag || event.tags?.includes(selectedTag);
-		return matchesSearch && matchesTag;
+		const matchesStatus =
+		  pollStatusFilter === "all" ||
+		  (pollStatusFilter === "active" && !event.has_ended) ||
+		  (pollStatusFilter === "closed" && event.has_ended);
+		return matchesSearch && matchesTag && matchesStatus;
 	})
 	.sort((a, b) => (pollStats[b.id]?.volume ?? 0) - (pollStats[a.id]?.volume ?? 0));
 
@@ -122,7 +126,7 @@ export default function Dashboard() {
 						/>
 					</div>
 					<Select value={selectedTag} onValueChange={setSelectedTag}>
-						<SelectTrigger className="w-full sm:w-48 bg-slate-900 border-slate-800 text-white">
+						<SelectTrigger className="w-full sm:w-48 bg-slate-900 border-slate-800 text-white placeholder:text-slate-500">
 							<SelectValue placeholder="Select tag" />
 						</SelectTrigger>
 						<SelectContent className="max-h-40 overflow-y-auto">
@@ -144,6 +148,16 @@ export default function Dashboard() {
 								</SelectItem>
 							))}
 						</SelectContent>
+					</Select>
+					<Select value={pollStatusFilter} onValueChange={setPollStatusFilter}>
+					  <SelectTrigger className="w-full sm:w-48 bg-slate-900 border-slate-800 text-white">
+					    <SelectValue placeholder="Poll status" />
+					  </SelectTrigger>
+					  <SelectContent>
+					    <SelectItem value="all">All</SelectItem>
+					    <SelectItem value="active">Active</SelectItem>
+					    <SelectItem value="closed">Closed</SelectItem>
+					  </SelectContent>
 					</Select>
 				</div>
 

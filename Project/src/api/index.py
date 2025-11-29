@@ -24,7 +24,7 @@ from api.trade import buy_shares, sell_shares, estimate_cost
 from api.tags import add_tag_to_poll, get_all_tags, get_tag_by_id
 
 # Import admin functions
-from api.admin import get_unapproved_polls, approve_poll, update_poll, reject_poll
+from api.admin import get_unapproved_polls, get_unresolved_polls, approve_poll, update_poll, reject_poll, resolve_poll
 
 #Import leaderboard functions
 from api.leaderboard import get_leaderboard, calculate_total_users
@@ -156,11 +156,21 @@ def get_user_info_route():
     """Retrieve user information."""
     return get_data()
 
-@app.route("/api/admin/all", methods=["GET"])
+@app.route("/api/admin/review/all", methods=["GET"])
 @protected
 def get_unapproved_polls_route():
     "Retrieve all unapproved polls"
     return get_unapproved_polls()
+
+@app.route("/api/admin/resolve/all", methods=["GET"])
+def get_unresolved_polls_route():
+    """Retrieve all unresolved polls"""
+    return get_unresolved_polls()
+
+@app.route("/api/admin/resolve", methods=["POST"])
+def resolve_poll_route():
+    """Sets a poll's outcome and pays out users"""
+    return resolve_poll()
 
 @app.route("/api/admin/approve", methods=["POST"])
 @protected
