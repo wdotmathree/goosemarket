@@ -116,9 +116,9 @@ export default function EventDetail() {
 			// Combine the data
 			return {
 				...pollData.poll,
-				yes_votes: priceData.q_yes,
-				no_votes: priceData.q_no,
-				total_votes: priceData.q_yes + priceData.q_no,
+				yes_shares: priceData.q_yes,
+				no_shares: priceData.q_no,
+				total_shares: priceData.q_yes + priceData.q_no,
 				price_yes: priceData.price_yes,
 				price_no: priceData.price_no,
 			};
@@ -219,6 +219,15 @@ export default function EventDetail() {
 		Other: "bg-slate-500/10 text-slate-400 border-slate-500/20",
 	};
 
+	const getPercent = (value) => {
+		if (value === null || value === undefined) return 50;
+		// API returns ints (0-100). If we ever get 0-1 floats, scale up.
+		if (value > 1) return Math.round(value);
+		return Math.round(value * 100);
+	};
+	const yesPercent = getPercent(event?.price_yes);
+	const noPercent = Math.max(0, 100 - yesPercent);
+
 	return (
 		<div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
 			<div className="max-w-5xl mx-auto px-6 py-8">
@@ -226,7 +235,7 @@ export default function EventDetail() {
 				<Button
 					variant="ghost"
 					onClick={() => navigate(createPageUrl("Dashboard"))}
-					className="mb-6 text-slate-400 hover:text-white"
+					className="mb-6 text-slate-300 hover:text-emerald-400 hover:bg-slate-800/60 transition-colors"
 				>
 					<ArrowLeft className="w-4 h-4 mr-2" />
 					Back to Markets
@@ -319,7 +328,7 @@ export default function EventDetail() {
 										<div className="flex items-center gap-2">
 											<span>{isBuy ? "Buy Yes" : "Sell Yes"}</span>
 											<span className="text-2xl">
-												{event.total_votes > 0 ? Math.round((event.yes_votes / event.total_votes) * 100) : 50}%
+												{yesPercent}%
 											</span>
 										</div>
 									</Button>
@@ -335,7 +344,7 @@ export default function EventDetail() {
 										<div className="flex items-center gap-2">
 											<span>{isBuy ? "Buy No" : "Sell No"}</span>
 											<span className="text-2xl">
-												{event.total_votes > 0 ? Math.round((event.no_votes / event.total_votes) * 100) : 50}%
+												{noPercent}%
 											</span>
 										</div>
 									</Button>
@@ -390,16 +399,12 @@ export default function EventDetail() {
 									<div className="flex justify-between text-sm mb-2">
 										<span className="text-emerald-400 font-semibold">
 											YES{" "}
-											{event.total_votes > 0
-												? Math.round((event.yes_votes / event.total_votes) * 100)
-												: 50}
+											{yesPercent}
 											%
 										</span>
 										<span className="text-red-400 font-semibold">
 											NO{" "}
-											{event.total_votes > 0
-												? Math.round((event.no_votes / event.total_votes) * 100)
-												: 50}
+											{noPercent}
 											%
 										</span>
 									</div>
@@ -407,11 +412,7 @@ export default function EventDetail() {
 										<div
 											className="absolute left-0 top-0 h-full bg-gradient-to-r from-emerald-500 to-emerald-600 transition-all duration-500"
 											style={{
-												width: `${
-													event.total_votes > 0
-														? Math.round((event.yes_votes / event.total_votes) * 100)
-														: 50
-												}%`,
+												width: `${yesPercent}%`,
 											}}
 										/>
 									</div>

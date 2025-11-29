@@ -31,9 +31,11 @@ export default function Dashboard() {
 							const priceData = await priceRes.json();
 							return {
 								...poll,
-								yes_votes: priceData.q_yes,
-								no_votes: priceData.q_no,
-								total_votes: priceData.q_yes + priceData.q_no,
+								yes_price: priceData.price_yes,
+								no_price: priceData.price_no,
+								yes_shares: priceData.q_yes,
+								no_shares: priceData.q_no,
+								total_shares: priceData.q_yes + priceData.q_no,
 							};
 						}
 					} catch (e) {
@@ -41,9 +43,11 @@ export default function Dashboard() {
 					}
 					return {
 						...poll,
-						yes_percentage: 50,
-						no_percentage: 50,
-						total_pool: 100,
+						yes_price: 0.5,
+						no_price: 0.5,
+						yes_shares: 0,
+						no_shares: 0,
+						total_shares: 0,
 					};
 				})
 			);

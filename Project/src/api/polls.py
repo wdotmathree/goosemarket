@@ -63,6 +63,11 @@ def create_poll():
         if ends_at:
             try:
                 ends_at_dt = datetime.fromisoformat(ends_at.replace("Z", "+00:00"))
+                # Normalize to UTC even if the client sent a local (naive) datetime
+                if ends_at_dt.tzinfo is None:
+                    ends_at_dt = ends_at_dt.replace(tzinfo=timezone.utc)
+                else:
+                    ends_at_dt = ends_at_dt.astimezone(timezone.utc)
                 # Ensure it's in the future
                 if ends_at_dt <= datetime.now(timezone.utc):
                     return jsonify({"error": "End time must be in the future"}), 400
