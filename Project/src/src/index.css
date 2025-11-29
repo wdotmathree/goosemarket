@@ -66,3 +66,14 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Subtle dark overscroll backdrop that matches the app theme */
+html, body {
+  background-color: #050915;
+  background-image:
+    radial-gradient(100% 60% at 20% 0%, rgba(16, 185, 129, 0.08), transparent),
+    radial-gradient(100% 60% at 80% 10%, rgba(99, 102, 241, 0.08), transparent),
+    linear-gradient(180deg, #0b1223 0%, #050915 100%);
+  color-scheme: dark;
+  overscroll-behavior: contain;
+}

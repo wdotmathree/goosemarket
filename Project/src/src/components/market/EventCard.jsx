@@ -19,6 +19,13 @@ const categoryColors = {
 export default function EventCard({ event, pollStats }) {
   const navigate = useNavigate();
 
+  const percentFromPrice = (value) => {
+    if (value === null || value === undefined) return 50;
+    // API returns ints in [0,100]; fall back to scaling if we ever receive 0-1 floats
+    if (value > 1) return Math.round(value);
+    return Math.round(value * 100);
+  };
+
   const handleClick = () => {
     navigate(createPageUrl(`EventDetail?id=${event.id}`));
   };
@@ -63,11 +70,11 @@ export default function EventCard({ event, pollStats }) {
 							handleClick();
 						}}
 						className="relative overflow-hidden bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:border-emerald-500/50 transition-all"
-					>
+						>
 						<div className="flex items-center gap-2">
 							<span>Yes:</span>
 							<span className="text-2xl">
-								{event.price_yes != null ? Number(event.price_yes).toFixed(1) : "50.0"}%
+								{percentFromPrice(event.price_yes)}%
 							</span>
 						</div>
 					</Button>
@@ -77,11 +84,11 @@ export default function EventCard({ event, pollStats }) {
 							handleClick();
 						}}
 						className="relative overflow-hidden bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 hover:border-red-500/50 transition-all"
-					>
+						>
 						<div className="flex items-center gap-2">
 							<span>No:</span>
 							<span className="text-2xl">
-								{event.price_no != null ? Number(event.price_no).toFixed(1) : "50.0"}%
+								{percentFromPrice(event.price_no)}%
 							</span>
 						</div>
 					</Button>
