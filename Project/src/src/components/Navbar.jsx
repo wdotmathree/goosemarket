@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { PlusCircle, Shield, Trophy, LayoutGrid, LogOut } from "lucide-react";
+import { PlusCircle, Shield, Trophy, LayoutGrid, LogOut, CircleUserRound} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
 	const location = useLocation();
-	const { isAdmin, username, balance } = useAuth();
+	const { isAdmin, username, balance, userId } = useAuth();
 
 	const [profilePopup, setProfilePopup] = useState(false);
 	const profileRef = useRef(null);
@@ -91,6 +91,13 @@ export default function Navbar() {
 							{/* Profile Dropdown Menu */}
 							{profilePopup && (
 								<div className="absolute right-0 mt-5 w-44 bg-slate-900 border border-slate-800 rounded-lg shadow-xl overflow-hidden">
+									<Link
+										to={`/user?id=${userId}`}
+										className="w-full flex items-center gap-3 px-4 py-3 text-left text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
+									>
+										<CircleUserRound size={18}></CircleUserRound>
+										<span>View Profile</span>
+									</Link>
 									<button
 										onClick={handleLogout}
 										className="w-full flex items-center gap-3 px-4 py-3 text-left text-slate-300 hover:bg-slate-800 hover:text-white transition-colors"
