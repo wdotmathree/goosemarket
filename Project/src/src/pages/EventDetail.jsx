@@ -334,14 +334,15 @@ export default function EventDetail() {
 							<CardContent className="space-y-4">
 								<div className="grid grid-cols-2 gap-4">
 									<Button
-										onClick={() => setSelectedSide("yes")}
-										className={`h-24 text-lg font-semibold transition-all ${
-											selectedSide === "yes"
-												? "bg-emerald-500 hover:bg-emerald-600 text-white border-2 border-emerald-400"
-												: "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-										} ${event.has_ended ? "opacity-50 cursor-not-allowed hover:bg-none" : ""}`}
-										disabled={event.has_ended}
-									>
+									onClick={() => setSelectedSide("yes")}
+									variant="ghost"
+									className={`h-24 text-lg font-semibold transition-all ${
+										selectedSide === "yes"
+											? "bg-emerald-600 hover:bg-emerald-500 text-white border-2 border-emerald-400"
+											: "bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30"
+									} ${event.has_ended ? "opacity-50 cursor-not-allowed hover:bg-none" : ""}`}
+									disabled={event.has_ended}
+								>
 										<div className="flex items-center gap-2">
 											<span>{isBuy ? "Buy Yes" : "Sell Yes"}</span>
 											<span className="text-2xl">
@@ -350,14 +351,15 @@ export default function EventDetail() {
 										</div>
 									</Button>
 									<Button
-										onClick={() => setSelectedSide("no")}
-										className={`h-24 text-lg font-semibold transition-all ${
-											selectedSide === "no"
-												? "bg-red-500 hover:bg-red-600 text-white border-2 border-red-400"
-												: "bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30"
-										} ${event.has_ended ? "opacity-50 cursor-not-allowed hover:bg-none" : ""}`}
-										disabled={event.has_ended}
-									>
+									onClick={() => setSelectedSide("no")}
+									variant="ghost"
+									className={`h-24 text-lg font-semibold transition-all ${
+										selectedSide === "no"
+											? "bg-red-600 hover:bg-red-500 text-white border-2 border-red-400"
+											: "bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30"
+									} ${event.has_ended ? "opacity-50 cursor-not-allowed hover:bg-none" : ""}`}
+									disabled={event.has_ended}
+								>
 										<div className="flex items-center gap-2">
 											<span>{isBuy ? "Buy No" : "Sell No"}</span>
 											<span className="text-2xl">
@@ -427,9 +429,15 @@ export default function EventDetail() {
 									</div>
 									<div className="relative h-3 bg-slate-800 rounded-full overflow-hidden">
 										<div
-											className="absolute left-0 top-0 h-full bg-gradient-to-r from-emerald-500 to-emerald-600 transition-all duration-500"
+											className="absolute left-0 top-0 h-full bg-emerald-500 transition-all duration-500"
 											style={{
 												width: `${yesPercent}%`,
+											}}
+										/>
+										<div
+											className="absolute right-0 top-0 h-full bg-red-500 transition-all duration-500"
+											style={{
+												width: `${noPercent}%`,
 											}}
 										/>
 									</div>

@@ -69,7 +69,8 @@ export default function EventCard({ event, pollStats }) {
 							e.stopPropagation();
 							handleClick();
 						}}
-						className="relative overflow-hidden bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:border-emerald-500/50 transition-all"
+						variant="ghost"
+						className="relative overflow-hidden bg-emerald-600/90 hover:bg-emerald-500 text-white border border-emerald-400/60 transition-all"
 						>
 						<div className="flex items-center gap-2">
 							<span>Yes:</span>
@@ -83,7 +84,8 @@ export default function EventCard({ event, pollStats }) {
 							e.stopPropagation();
 							handleClick();
 						}}
-						className="relative overflow-hidden bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 hover:border-red-500/50 transition-all"
+						variant="ghost"
+						className="relative overflow-hidden bg-red-600/90 hover:bg-red-500 text-white border border-red-400/60 transition-all"
 						>
 						<div className="flex items-center gap-2">
 							<span>No:</span>
