@@ -47,9 +47,8 @@ def get_data():
         supabase = get_supabase()
         if not supabase:
             return jsonify({"error": "Database connection error"}), 503
-
         # Verify user exists
-        user_result = supabase.table("users").select("*").eq("id", user_id).execute()
+        user_result = supabase.table("profiles").select("*").eq("id", user_id).execute()
         if not user_result.data:
             return jsonify({"error": "User does not exist"}), 404
 
@@ -58,22 +57,23 @@ def get_data():
         balance = user.get("balance", 0.0)
 
         # Get user positions
-        positions_response = get_positions(user_id, poll_id, status, page_size, page)
-        if positions_response.status_code != 200:
-            return positions_response
+        positions_response, status = get_positions(user_id, poll_id, status, page_size, page)
+
+        if status != 200:
+            return positions_response, status
         positions_data = positions_response.get_json()
         positions = positions_data.get("positions", [])
 
         lifetime_pnl = 0.0
         exposure = 0.0
         for position in positions:
-            lifetime_pnl += position.get("unrealized_pnl", 0.0)
+            lifetime_pnl += position.get("current_pnl", 0.0)
             if position.get("open", True):
                 exposure += int(position.get("quantity", 0)) * float(position.get("avg_price", 0.0))
 
         return jsonify({
             "username": username,
-            "balance": balance,
+            "balance": balance / 100.0,
             "lifetime_pnl": lifetime_pnl,
             "positions": positions,
             "exposure": exposure

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, Medal, Award, TrendingUp } from "lucide-react";
@@ -122,8 +123,8 @@ export default function Leaderboard() {
               {leaders.map((entry, i) => {
                 const rank = entry.rank || i + 1;
                 return (
+                  <Link key={rank} to={`/user?id=${entry.id}`}>
                   <div
-                    key={rank}
                     className={`p-4 rounded-lg border transition-all hover:scale-[1.02] ${getRankBg(rank)}`}
                   >
                     <div className="flex items-center justify-between">
@@ -156,6 +157,7 @@ export default function Leaderboard() {
                       </div>
                     </div>
                   </div>
+                  </Link>
                 );
               })}
             </div>

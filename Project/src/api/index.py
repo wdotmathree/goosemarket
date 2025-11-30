@@ -150,7 +150,7 @@ def get_positions_route():
     """Retrieve user positions."""
     return get_positions_endpoint()
 
-@app.route("/api/user", methods=["GET"])
+@app.route("/api/user", methods=["POST"])
 @protected
 def get_user_info_route():
     """Retrieve user information."""

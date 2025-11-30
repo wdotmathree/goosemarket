@@ -12,6 +12,7 @@ import Layout from "./components/Layout.jsx";
 import CreateEvent from "./pages/CreateEvent.jsx";
 import Leaderboard from "./pages/Leaderboard.jsx";
 import EventDetail from "./pages/EventDetail.jsx";
+import Profile from "./pages/profile.jsx"
 
 import { AuthProvider } from "./context/AuthContext.jsx";
 
@@ -70,6 +71,14 @@ ReactDOM.createRoot(document.getElementById("root")).render(
 							element={
 								<Layout>
 									<EventDetail />
+								</Layout>
+							}
+						/>
+						<Route
+							path="user"
+							element={
+								<Layout>
+									<Profile />
 								</Layout>
 							}
 						/>

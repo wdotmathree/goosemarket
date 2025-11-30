@@ -37,7 +37,7 @@ def get_leaderboard(num_users):
             balance = profile.data["balance"]
             user_position = get_pos(user_id, balance, supabase)
         
-        response = supabase.table("profiles").select("username, balance").order("balance", desc=True).limit(num_users).execute()
+        response = supabase.table("profiles").select("username, balance, id").order("balance", desc=True).limit(num_users).execute()
         return jsonify({"rank": user_position, 
                         "username": username,
                         "user_balance": balance,

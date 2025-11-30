@@ -134,7 +134,7 @@ def get_positions(user_id, poll_id=None, status=None, page_size=DEFAULT_PAGE_SIZ
                 return jsonify({"positions": []}), 200
             else:
                 # Also includes the case where status is not provided
-                result = supabase.table("trades").select("*").eq("user_id", user_id).eq("poll_id", poll_id).order("timestamp", desc=False).range(offset, offset + page_size - 1).execute()
+                result = supabase.table("trades").select("*").eq("user_id", user_id).eq("poll_id", poll_id).order("timestamp", desc=True).range(offset, offset + page_size - 1).execute()
         else:
             # No poll_id provided, return all trades filtered by status if provided
             if status == "open":
@@ -144,7 +144,7 @@ def get_positions(user_id, poll_id=None, status=None, page_size=DEFAULT_PAGE_SIZ
                 if not open_poll_ids:
                     return jsonify({"positions": []}), 200
 
-                result = supabase.table("trades").select("*").eq("user_id", user_id).in_("poll_id", open_poll_ids).order("timestamp", desc=False).range(offset, offset + page_size - 1).execute()
+                result = supabase.table("trades").select("*").eq("user_id", user_id).in_("poll_id", open_poll_ids).order("timestamp", desc=True).range(offset, offset + page_size - 1).execute()
             elif status == "closed":
                 closed_polls = supabase.table("polls").select("id").lt("ends_at", now_utc).execute()
                 closed_poll_ids = [poll['id'] for poll in closed_polls.data]
@@ -152,13 +152,26 @@ def get_positions(user_id, poll_id=None, status=None, page_size=DEFAULT_PAGE_SIZ
                 if not closed_poll_ids:
                     return jsonify({"positions": []}), 200
 
-                result = supabase.table("trades").select("*").eq("user_id", user_id).in_("poll_id", closed_poll_ids).order("timestamp", desc=False).range(offset, offset + page_size - 1).execute()
+                result = supabase.table("trades").select("*").eq("user_id", user_id).in_("poll_id", closed_poll_ids).order("timestamp", desc=True).range(offset, offset + page_size - 1).execute()
             else:
                 # Status not provided, return all trades
-                result = supabase.table("trades").select("*").eq("user_id", user_id).order("timestamp", desc=False).range(offset, offset + page_size - 1).execute()
+                result = supabase.table("trades").select("*").eq("user_id", user_id).order("timestamp", desc=True).range(offset, offset + page_size - 1).execute()
 
         # Construct positions
         trades = result.data
+
+        # Fetch all poll titles
+        poll_ids = list({trade["poll_id"] for trade in trades})
+        poll_meta = {}
+        if poll_ids:
+            poll_query = supabase.table("polls").select("id", "title", "ends_at").in_("id", poll_ids).execute()
+            for row in poll_query.data:
+                ends_at = row.get("ends_at")
+                is_open = (ends_at is None) or (now_utc < ends_at)
+                poll_meta[row["id"]] = {
+                    "title": row.get("title", ""),
+                    "open": is_open
+                }
 
         positions_map = defaultdict(lambda: {"quantity": 0, "cost_basis_cents": 0, "open": True, "result": None})
 
@@ -227,12 +240,15 @@ def get_positions(user_id, poll_id=None, status=None, page_size=DEFAULT_PAGE_SIZ
 
             combined_positions.append({
                 "poll_id": poll_id,
+                "poll_title": poll_meta.get(poll_id, {}).get("title", True),
                 "side": "Yes" if side else "No",
                 "quantity": quantity,
                 "avg_price": round(avg_price_dollars, 2),
                 "current_price": curr_price,
                 "current_pnl": round(pnl_cents / 100.0, 2),
-                "open": data.get("open", True),
+                "pct_change": ((curr_price/100.0) - avg_price_dollars) / avg_price_dollars,
+                "value": value_now_cents / 100.0,
+                "open": poll_meta.get(poll_id, {}).get("open", True),
             })
 
         return jsonify({"positions": combined_positions}), 200
