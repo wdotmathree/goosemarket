@@ -23,7 +23,6 @@ def create_poll():
         "title": "Poll title",
         "description": "Poll description",
         "ends_at": "2025-11-15T10:00:00Z",
-        "public": true,
         "creator": 1,
         "tags": [1, 2, 3]  // Optional: array of tag IDs
     }
@@ -38,7 +37,6 @@ def create_poll():
         title = data.get("title", "").strip()
         description = data.get("description", "").strip()
         ends_at = data.get("ends_at")
-        public = data.get("public", True)
         creator = data.get("creator")
         tags = data.get("tags", [])
 
@@ -73,10 +71,6 @@ def create_poll():
                     return jsonify({"error": "End time must be in the future"}), 400
             except (ValueError, AttributeError):
                 return jsonify({"error": "Invalid end time format. Use ISO 8601 format"}), 400
-
-        # Validate public flag
-        if not isinstance(public, bool):
-            return jsonify({"error": "Public must be a boolean"}), 400
 
         # Validate creator
         if not creator:
@@ -136,7 +130,6 @@ def create_poll():
         poll_data = {
             "title": title,
             "description": description,
-            "public": public,
             "creator": creator,
             "created_at": datetime.now(timezone.utc).isoformat()
         }
