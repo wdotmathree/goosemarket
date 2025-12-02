@@ -42,7 +42,7 @@ export default function EventCard({ event, pollStats }) {
 				{/* Header */}
 				<div className="flex items-start justify-between gap-3">
 					<div className="flex gap-2 mt-2 max-w-[75%] overflow-x-auto overflow-y-hidden whitespace-nowrap -ms-overflow-style-none scrollbar-hide">
-						{event.has_ended && <Badge variant="outline" className="inline-block bg-slate-500/10 text-slate-400 border-slate-500/20 border">Closed</Badge>}
+						{event.has_ended && <Badge variant="outline" className="inline-block bg-red-500/40 text-slate-400 border-slate-500/20 border">Closed</Badge>}
 						{event.tags?.filter(tag => tag !== "Closed").map((tag) => (
 						<Badge key={tag} variant="outline" className="inline-block bg-slate-500/10 text-slate-400 border-slate-500/20 border">
 							{tag}

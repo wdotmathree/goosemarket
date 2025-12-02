@@ -41,7 +41,7 @@ def get_price(poll_id):
             return jsonify({"error": "Database connection not available"}), 503
         
         # Verify poll exists
-        poll_result = supabase.table("polls").select("id").eq("id", poll_id).execute()
+        poll_result = supabase.table("polls").select("id, outcome").eq("id", poll_id).execute()
         if not poll_result.data:
             return jsonify({"error": "Poll not found"}), 404
         
@@ -62,7 +62,14 @@ def get_price(poll_id):
         b = _compute_b_ls_lmsr(q_yes, q_no, b0=B0)
         
         # Get current prices
-        price_yes, price_no = _lmsr_prices(q_yes, q_no, b)
+        if poll_result.data[0].get("outcome") is True:
+            price_yes = 100
+            price_no = 0
+        elif poll_result.data[0].get("outcome") is False:
+            price_yes = 0
+            price_no = 100
+        else:
+            price_yes, price_no = _lmsr_prices(q_yes, q_no, b)
         # Return price information as integer cents
         return jsonify({
             "poll_id": poll_id,
