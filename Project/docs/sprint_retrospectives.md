@@ -27,7 +27,7 @@ Velocity:
 ## Week 3
 
 What went well:
-We have been able to integrate much of our backend with our frontend, so the app is finally useable.
+We have been able to integrate some of our backend with our frontend, so the app is finally useable.
 Everyone was able to work on backend tasks independently, we had no blocking tasks this week.
 We created the math behind calculating share prices, and how they change as users buy and sell, which is the main feature of our site.
 
@@ -36,3 +36,14 @@ We could have had more communication between the frontend and backend developers
 what the backend returns.
 
 Velocity: 25
+
+## Week 4
+
+What went well:
+We succesfully integrated all of our backend functions with the frontend, including selling, showing trades, admin panel, leaderboard, and profile page.
+We were able to fix most of our bugs so that our app is in a fully usable state right now.
+
+What can we improve:
+There's not much we could improve this week, as we had our most productive week of the entire project. One thing we could have improved upon was more evenly distributing tasks across weeks so that we had less work this week.
+
+Velocity: 31
