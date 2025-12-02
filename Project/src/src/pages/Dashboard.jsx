@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, TrendingUp, Flame } from "lucide-react";
+import { Search, TrendingUp, Flame, Activity, User } from "lucide-react";
 import EventCard from "../components/market/EventCard";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -174,7 +174,7 @@ export default function Dashboard() {
 					</div>
 					<div className="p-6 rounded-xl bg-slate-900/50 border border-slate-800">
 						<div className="flex items-center gap-3">
-							<span className="text-3xl">📊</span>
+							<Activity className="w-8 h-8 text-emerald-400" />
 							<div>
 								<p className="text-slate-400 text-sm">Total Volume</p>
 								<p className="text-2xl font-bold text-white">
@@ -185,7 +185,7 @@ export default function Dashboard() {
 					</div>
 					<div className="p-6 rounded-xl bg-slate-900/50 border border-slate-800">
 						<div className="flex items-center gap-3">
-							<span className="text-3xl">👥</span>
+							<User className="w-8 h-8 text-emerald-400" />
 							<div>
 								<p className="text-slate-400 text-sm">Active Traders</p>
 								<p className="text-2xl font-bold text-white">{overallStats.totalTraders.toLocaleString()}</p>
