@@ -1,63 +1,63 @@
-# Team Project Repo
+# SE101 Team Project – To-Do App Evolution
 
-In this repo there are two subdirectories:
+Student teams will **devise, design, develop, debug, and demo** a significant software project using **Scrum in GitLab**.  
+All deliverables live in this GitLab repository.
 
-1. To-Do-App
-2. Project
+---
 
-In the To-Do-App directory you are required to
-1. Create a project charter for a web-access To-Do-App. Place it in `charter.md`
-   in the docs directory.
-2. Create requirements for functions:
-   a. add()
-   b. update()
-   c. delete()
-   d. next()
-   e. today()
-   f. tomorrow()
-   where all changes in the To-Do list are reflected in the database.  Since we
-   are headed toward having a web-accessible version of this To-Do App, you will
-   want to add a userid to the task table.  For now, though, security can be
-   left at the level of "whichever userid is logged into the database server
-   will be the userid for the To-Do list" though this will affect the SQL query
-   necessary to access only that user's tasks:
+## Project Options
+1. **Extend the To-Do App into a full web application** (web-accessible, persistent data).  
+2. **Extend the To-Do App into a full Android app** (Teams 1–23 only).  
+3. **Propose your own project** → Must be approved via `docs/charter.md`.
 
-	SELECT ... AND userid = '...";
-   
-3. We wish to work toward a web-accessible version of this application.
-   Initiallly we do this as a "local-only" web setup (the web server will be on
-   your local machine and running as a python application).  To do this, install
-   the python web framework: 
+---
 
-	pip install flask
+## Required Deliverables & Grading
 
-4. Using your favourite LLMs, work out how to add in the web functionality.
+| % | Deliverable | Path | Stance |
+|---|-------------|------|--------|
+| **5%** | **Project Charter** | `docs/charter.md` | Formal agreement on scope, team roles, and success criteria. |
+| **10%** | **Product & Sprint Backlogs** | GitLab **Issue Boards** | Live, groomed boards showing prioritized stories and sprint commitments. |
+| **10%** | **Requirements & Design** | `docs/user_stories.md`, `docs/domain_model.md`, `docs/use_cases.md` | Clear, traceable user needs and system structure. |
+| **15%** | **Source Code & Build** | `src/`, `build/` (if needed) | Clean, versioned, buildable code with tagged `v1.0` release. |
+| **10%** | **Tests & Results** | `docs/test_plan.md` `tests/`, `docs/test_report.md` | Automated tests with execution proof and coverage ≥70%. |
+| **5%** | **User Manual** | `docs/user_manual.md` | Simple guide for end-users to operate the app. |
+| **10%** | **Final Video Demo** | `docs/demo.mp4`  | 2–4 min walkthrough of all user stories in action. |
+| **10%** | **Final Sprint Review** | `docs/review_presentation.pdf` + live demo | Summary of increment, velocity, and stakeholder feedback. |
+| **10%** | **Sprint Retrospectives** | `docs/sprint_retrospectives.md` | Reflections per sprint on process and improvements. |
+| **10%** | **Weekly Progress & Git Hygiene** | Commits, issues, boards | Consistent activity, meaningful messages, and backlog updates. |
+| **5%** | **README & Setup Guide** | `README.md` | Reproducible instructions to run the app from scratch. |
 
-5. Create an appropriate test plan and testcases for this.
+> **Total: 100%**
 
-When doing this work, you are required to:
+---
 
-0. Create an issue and branch for this work.  For individual functions, tests,
-   *etc.* you should create subbranches from that branch.
-1. Have each team member work on one of the functions, within their own subbranch.
-2. Have a separate team member create the test cases for that functions.
-3. Have a third team member require the merge request, approving or not, as they
-   see fit. If not approved, the dev and tester should fix things until it is
-   approved.
-4. When all functions and tests are complete and merged into your To-Do-App
-   branch, issue a Merge Request and assign it to `d3feng`.
+## Directory Structure (Required)
+```plaintext
+.
+├── README.md                  ← This file (setup + overview)
+├── docs/
+│   ├── charter.md
+│   ├── user_stories.md
+│   ├── domain_model.md
+│   ├── use_cases.md
+│   ├── test_report.md
+│   ├── user_manual.md
+│   ├── sprint_retrospectives.md
+│   ├── review_presentation.pdf
+│   └── demo.mp4               ← Final demo video
+├── src/                       ← All source code
+├── tests/                     ← Unit + integration tests
+├── build/                     ← Optional: compiled output
+└── .gitlab-ci.yml             ← Optional: CI pipeline (bonus)
+```
 
-In the Project directory, options are as follows:
+---
 
-1. Extend the To-Do-App to make it a fully featured web application.  Note that
-   there will be some additional work within the labs in this space, though only
-   with respect to making it a fully web-accessible web application, rather than
-   local only.
-2. Extend the To-Do-App to make it a fully featured Android application (only
-   Teams 1-23)
-3. Propose a project of your own devising.  This must be approved by the SE101
-   instruction team.
-
-Discuss in your team your ideas, and within the `Projects/docs` directory write
-a `charter.md` file with the project you are proposing.
+## GitLab Setup
+- Use **Issue Boards** under **Plan > Issue boards**  
+  - One board: **Product Backlog** (label: `backlog`)  
+  - One board per sprint: **Sprint 1**, **Sprint 2**, etc. (use **Milestones** or **Iterations**)  
+- Label issues: `type::story`, `type::bug`, `priority::high`, `sprint::1`, etc.  
+- Tag final release: `git tag v1.0 && git push origin v1.0`
 
