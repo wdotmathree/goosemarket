@@ -2,9 +2,8 @@
   "version": 2,
   "buildCommand": "npm install --include=dev && npm run build",
   "outputDirectory": "dist",
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/api/index.py" },
-    { "handle": "filesystem" },
-    { "src": "/.*", "dest": "/index.html" }
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.py" },
+    { "source": "/(.*)", "destination": "/dist/index.html" }
   ]
 }
